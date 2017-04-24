@@ -197,37 +197,49 @@ example
 }
 
 // naive (?) implementation
-proc evalPolyAtInterval(poly f, list ilist)
-"USAGE: evalPolyAtInterval(f, ilist), f poly, ilist list of of intervals
-RETURN: interval extension ff(ilist)
+proc evalPolyAtInterval(poly f, list #)
+"USAGE: evalPolyAtInterval(f, intervals), f poly, intervals list of of intervals or:
+        evalPolyAtInterval(f, I1, I2, ..) f poly, I1..In intervals
+RETURN: interval extension ff(intervals)
 EXAMPLE: computes interval extension of polynomial f"
 {
     int numvars = nvars(basering);
-    intvec exponent;
+    list intervals;
 
-    if (numvars <> size(ilist)) {
-        ERROR("ilist has wrong number of elements");
+    // accept different input types
+    if (size(#) == 1 && typeof(#[1]) == "list") {
+        intervals = #[1];
+    } else {
+        intervals = #;
+    };
+
+    if (numvars <> size(intervals)) {
+        ERROR("Wrong number of intervals supplied.");
     }
+    // check interval list for consistency
     for (int i = 1; i <= numvars; i++) {
-        if (typeof(ilist[i]) <> "interval") {
-            ERROR("ilist contains non-intervals!");
+        if (typeof(intervals[i]) <> "interval") {
+            ERROR("Input contains non-intervals!");
         }
     }
 
     interval resultMonom;
+    // neutral elemen of addition
     interval resultWhole = boundsToInterval(0/1, 0/1);
 
     number coeff;
+    intvec exponent;
 
-    // handle each monomial seperately
+    // handle each monomial separately
     while (f <> 0) {
         coeff = leadcoef(f);
         exponent = leadexp(f);
 
+        // neutral element of multiplication
         resultMonom = boundsToInterval(1/1, 1/1);
 
         for (i = 1; i <= numvars; i++) {
-            resultMonom = resultMonom * ilist[i] ^ exponent[i];
+            resultMonom = resultMonom * intervals[i] ^ exponent[i];
         }
 
         resultWhole = resultWhole + coeff * resultMonom;
@@ -244,14 +256,14 @@ example
 
     poly f = x3 + 4x + 3;
 
-    evalPolyAtInterval(f, list(I1));
+    evalPolyAtInterval(f, I1);
 
     ring S = 0,(x,y,z),lp;
     interval I2 = boundsToInterval(0/1, 1/1); I2;
 
     poly f = xyz2 + 2x2 + (3/2)*y3x + z + 1;
 
-    evalPolyAtInterval(f, list(I2, I2, I2));
+    evalPolyAtInterval(f, I2, I2, I2);
 }
 
 // vim: ft=singular
