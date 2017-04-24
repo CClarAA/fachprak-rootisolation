@@ -1,6 +1,7 @@
 ///////////////////////////////////////////////////////////////////
+version="version interval.lib 0.1 Apr_2017 ";
 info="
-LIBRARY:    intervalList.lib
+LIBRARY:    interval.lib
 AUTHORS:    Dominik Bendle
             Clara Petroll
 
