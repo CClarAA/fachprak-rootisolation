@@ -15,6 +15,7 @@ print       intervalPrint       pretty print
 PROCEDURES:
 boundsToInterval        construct interval for given bounds.
 negateInterval          negate interval.
+evalPolyAtInterval      evaluate interval extension of polynomial
 ";
 ///////////////////////////////////////////////////////////////////
 
@@ -199,6 +200,63 @@ example
     J^2;
     J^3;
     J^4;
+}
+
+// naive (?) implementation
+proc evalPolyAtInterval(poly f, list ilist)
+"USAGE: evalPolyAtInterval(f, ilist), f poly, ilist list of of intervals
+RETURN: interval extension ff(ilist)
+EXAMPLE: computes interval extension of polynomial f"
+{
+    int numvars = nvars(basering);
+    intvec exponent;
+
+    if (numvars <> size(ilist)) {
+        ERROR("ilist has wrong number of elements");
+    }
+    for (int i = 1; i <= numvars; i++) {
+        if (typeof(ilist[i]) <> "interval") {
+            ERROR("ilist contains non-intervals!");
+        }
+    }
+
+    interval resultMonom;
+    interval resultWhole = boundsToInterval(0/1, 0/1);
+
+    number coeff;
+
+    while (f <> 0) {
+        coeff = leadcoef(f);
+        exponent = leadexp(f);
+
+        resultMonom = boundsToInterval(1/1, 1/1);
+
+        for (i = 1; i <= numvars; i++) {
+            resultMonom = resultMonom * ilist[i] ^ exponent[i];
+        }
+
+        resultWhole = resultWhole + coeff * resultMonom;
+        f = f - lead(f);
+    }
+
+    return(resultWhole);
+}
+example
+{
+    echo = 2;
+    ring R = 0,x,lp;
+    interval I1 = boundsToInterval(0/1, 1/1); I1;
+
+    poly f = x3 + 4x + 3;
+
+    evalPolyAtInterval(f, list(I1));
+
+    ring S = 0,(x,y,z),lp;
+    interval I2 = boundsToInterval(0/1, 1/1); I2;
+
+    poly f = xyz2 + 2x2 + (3/2)*y3x + z + 1;
+
+    evalPolyAtInterval(f, list(I2, I2, I2));
 }
 
 // vim: ft=singular
