@@ -132,28 +132,20 @@ example
     I = negateInterval(I);                      I;
 }
 
-proc intervalMultiply
+proc intervalMultiply(def factor, interval J)
 "USAGE: I * J; I, J interval
 RETURN: product I*J
 EXAMPLE: multiplies intervals (and scalars)"
 {
-    // this allows scalar multiplication but is very ugly
-    if (size(#) <> 2) {
-        ERROR("wrong number of arguments!");
-    }
-    if (typeof(#[2]) <> "interval") {
-        ERROR("second argument must be interval!");
-    }
-    if (typeof(#[1]) == "number") {
-        interval I = boundsToInterval(#[1], #[1]);
-    } else {
-        if (typeof(#[1]) <> "interval") {
-            ERROR("first argument neither number nor interval!");
-        }
-        interval I = #[1];
-    }
+    interval I;
 
-    interval J = #[2];
+    // simulate switch behaviour
+    while(1) {
+        if (typeof(factor) == "interval") { I = factor;                           break; }
+        if (typeof(factor) == "number")   { I = boundsToInterval(factor, factor); break; }
+
+        ERROR("First argument must be number or interval.");
+    }
 
     number lo = min(I[1] * J[1], I[1] * J[2], I[2] * J[1], I[2]*J[2]);
     number up = max(I[1] * J[1], I[1] * J[2], I[2] * J[1], I[2]*J[2]);
@@ -176,7 +168,7 @@ example
 proc intervalPotentiate(interval I, int n)
 "USAGE: I^n, interval I, int n
 RETURN: I^n with stricter bounds than naive multiplication
-EXAMPLE: potentiates n interval"
+EXAMPLE: potentiates an interval"
 {
     if (n % 2 == 1 || I[1]*I[2] >= 0) {
         return(boundsToInterval(I[1]^n, I[2]^n));
@@ -225,6 +217,7 @@ EXAMPLE: computes interval extension of polynomial f"
 
     number coeff;
 
+    // handle each monomial seperately
     while (f <> 0) {
         coeff = leadcoef(f);
         exponent = leadexp(f);
