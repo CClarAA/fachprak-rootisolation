@@ -16,7 +16,7 @@ print       intervalPrint       pretty print
 ^           intervalPotentiate  potentiation
 
 PROCEDURES:
-boundsToInterval        construct interval for given bounds.
+boundsToInterval        construct interval for given bounds
 evalPolyAtInterval      evaluate interval extension of polynomial
 ";
 ///////////////////////////////////////////////////////////////////
