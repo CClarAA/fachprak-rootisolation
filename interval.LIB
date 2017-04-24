@@ -7,6 +7,7 @@ AUTHORS:    Dominik Bendle
 
 OVERLOADS:
 [           intervalGet         indexing
+=           intervalAssign      assigning
 print       intervalPrint       pretty print
 +           intervalAdd         addition
 -           intervalNegate      negation (unary)
@@ -26,6 +27,7 @@ static proc mod_init()
     newstruct("interval", "list l");
 
     system("install", "interval", "[",      intervalGet,        2);
+    system("install", "interval", "=",      intervalAssign,     1);
     system("install", "interval", "print",  intervalPrint,      1);
     system("install", "interval", "+",      intervalAdd,        2);
     system("install", "interval", "-",      intervalNegate,     1);
@@ -49,6 +51,17 @@ RETURN: interval [a, b]."
     }
 
     return(OUT);
+}
+
+proc intervalAssign(def input)
+"USAGE: I = input, input number, int, ...
+RETURN: interval I
+EXAMPLE: assigning intervals with ="
+{
+    if(typeof(input) == "number") { return(boundsToInterval(input, input)); }
+    if(typeof(input) == "int"   ) { return(intervalAssign(number(input)));  }
+
+    ERROR("input not supported.");
 }
 
 proc intervalGet(interval I, int n)
@@ -256,7 +269,7 @@ EXAMPLE: computes interval extension of polynomial f"
 
     interval resultMonom;
     // neutral elemen of addition
-    interval resultWhole = boundsToInterval(0/1, 0/1);
+    interval resultWhole = 0;
 
     number coeff;
     intvec exponent;
@@ -267,7 +280,7 @@ EXAMPLE: computes interval extension of polynomial f"
         exponent = leadexp(f);
 
         // neutral element of multiplication
-        resultMonom = boundsToInterval(1/1, 1/1);
+        resultMonom = 1;
 
         for (i = 1; i <= numvars; i++) {
             resultMonom = resultMonom * intervals[i] ^ exponent[i];
