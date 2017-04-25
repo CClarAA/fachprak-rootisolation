@@ -300,4 +300,59 @@ example
     evalPolyAtInterval(f, I2, I2, I2);
 }
 
+proc testPolyBox(ideal I, list #)
+"USAGE: testPolyBox(I, intervals) or testPolyBox(I, I1, I2, ..)
+        I ideal, intervals list of intervals, I1, I2, .. intervals
+RETURN: -1, if ideal has no zeros in given box, 1, if unique zero in given box
+        0 if test is inconclusive
+EXAMPLE: tests the above for intersection of ellipses."
+{
+    int numvars = nvars(basering);
+    list intervals;
+
+    // accept different input types
+    if (size(#) == 1 && typeof(#[1]) == "list") {
+        intervals = #[1];
+    } else {
+        intervals = #;
+    };
+
+    if (numvars <> size(intervals)) {
+        ERROR("Wrong number of intervals supplied.");
+    }
+    // check interval list for consistency
+    for (int i = 1; i <= numvars; i++) {
+        if (typeof(intervals[i]) <> "interval") {
+            ERROR("Input contains non-intervals!");
+        }
+    }
+
+    interval tmp;
+
+    for (i = 1; i <= ncols(I); i++) {
+        tmp = evalPolyAtInterval(I[i], intervals);
+        // check if 0 contained in every interval
+        // return -1 if not
+        if (tmp[1]*tmp[2] > 0) { return(-1); }
+    }
+
+    // TODO: implement multi-dimensional Newton method
+    // returns 1
+
+    // no condition could be verified
+    return(0);
+}
+example
+{
+    echo = 2;
+    ring R = 0,(x,y),lp;
+    ideal I = 2x2-xy+2y2-2, 2x2-3xy+3y2-2;
+
+    interval unit = boundsToInterval(0, 1);
+    // there may be common zeros in [0,1]x[0,1]
+    testPolyBox(I, unit, unit);
+
+    // there are no common zeros in [0,0.5]x[0,0.5]
+    testPolyBox(I, unit/2, unit/2);
+}
 // vim: ft=singular
