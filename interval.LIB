@@ -92,6 +92,25 @@ example
     I[2];
 }
 
+proc length(interval I)
+"USAGE: length(I), I interval
+RETURN: length/size in measure sense
+EXAMPLE: compute length of intervals"
+{
+    return(I[2] - I[1]);
+}
+example
+{
+    echo = 2;
+    ring R = 0,x,lp;
+
+    interval I = boundsToInterval(0, 1);    I;
+    length(I);
+
+    I = boundsToInterval(-1/2, 3/7);        I;
+    length(I);
+}
+
 proc intervalPrint(interval I)
 "USAGE: I;, I interval
 EXAMPLE: prints interval in readable format"
