@@ -383,4 +383,40 @@ example
     // there are no common zeros in [0,0.5]x[0,0.5]
     testPolyBox(I, unit/2, unit/2);
 }
+
+proc splitBox(list box)
+"USAGE: splitBox(box), box list of intervals
+RETURN: new list of smaller boxes
+EXAMPLE: split two-dimensional interval into two"
+{
+    // at first split only at largest interval
+    int imax = 1;
+
+    for (int i = 2; i <= size(box); i++) {
+        if (length(box[i]) > length(box[imax])) { imax = i; }
+    }
+
+    list boxes = list();
+    list tmp;
+    number mean = (box[imax][1] + box[imax][2])/2;
+
+    for (i=1; i<=2; i++) {
+        tmp = box;
+        tmp[imax] = boundsToInterval(tmp[imax][i], mean);
+        boxes = insert(boxes, tmp);
+    }
+
+    return(boxes);
+}
+example
+{
+    echo = 2;
+    ring R = 0,(x,y),lp;
+
+    list box = boundsToInterval(0,1),
+               boundsToInterval(0,2);
+
+    box;
+    splitBox(box);
+}
 // vim: ft=singular
