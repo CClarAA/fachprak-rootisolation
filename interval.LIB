@@ -63,6 +63,14 @@ EXAMPLE: assigning intervals with ="
 
     ERROR("input not supported.");
 }
+example
+{
+    echo = 2;
+    ring R = 0,x,lp;
+
+    interval I = 1; I;
+    I = 3/7;        I;
+}
 
 proc intervalGet(interval I, int n)
 "USAGE: I[n], interval I, int n
