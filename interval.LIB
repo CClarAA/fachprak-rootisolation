@@ -149,21 +149,11 @@ example
     J = I - J;                                  J;
 }
 
-proc intervalMultiply(def factor, interval J)
+proc intervalMultiply(interval I, interval J)
 "USAGE: I * J; I, J interval
 RETURN: product I*J
 EXAMPLE: multiplies intervals (and scalars)"
 {
-    interval I;
-
-    // simulate switch behaviour
-    while(1) {
-        if (typeof(factor) == "interval") { I = factor;                           break; }
-        if (typeof(factor) == "number")   { I = boundsToInterval(factor, factor); break; }
-
-        ERROR("First argument must be number or interval.");
-    }
-
     number lo = min(I[1] * J[1], I[1] * J[2], I[2] * J[1], I[2]*J[2]);
     number up = max(I[1] * J[1], I[1] * J[2], I[2] * J[1], I[2]*J[2]);
 
