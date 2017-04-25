@@ -310,4 +310,332 @@ example
     evalPolyAtInterval(f, I2, I2, I2);
 }
 
+proc evalIdealAtBox(ideal I, list intervals)
+"USAGE: evaluate ideal at list of intervals i.e. at a box
+RETURN: list
+EXAMPLE: evalIdealAtBox"
+{
+	int numvars = nvars(basering);
+	
+	// check interval list for consistency
+    for (int i = 1; i <= numvars; i++) {
+        if (typeof(intervals[i]) <> "interval") {
+            ERROR("Input contains non-intervals!");
+        }
+    }
+    
+    // check if number of intervals is number of variables in basering
+    if (numvars<> size(I))
+    	{
+    	ERROR("number of variables and number of intervals not equal");
+    	}
+    // now evaluate ideal
+    list resu;
+    for (int j=1; j<= size(I);j++)
+    	{
+    	resu[j]=evalPolyAtInterval(I[j], intervals);
+    	}
+    return(resu);
+}
+
+example
+{
+    echo = 2;
+    ring R = 0,(x,y),lp;
+    interval I1 = boundsToInterval(0/1, 1/1); I1;
+    interval I2 = boundsToInterval(0/1, 1/1); I2;
+
+    poly f = xy2 + 2x2 + (3/2)*y3x  + 1;
+    poly g= 3x2 + 2y;
+    
+    ideal I=f,g;
+	list intervals;
+	intervals[1]=I1;
+	intervals[2]=I2;
+
+    evalIdealAtBox(I,intervals);
+    
+}
+
+proc intervalextensionJacobimat(ideal I, list #)
+"USAGE: interval extension of the Jacobian matrix of ideal 
+RETURN: list //matrix of intervals
+EXAMPLE: intervalextensionJacobimat"
+{
+	int numvars = nvars(basering);
+    list intervals;
+
+    // accept different input types
+    if (size(#) == 1 && typeof(#[1]) == "list") {
+        intervals = #[1];
+    } else {
+        intervals = #;
+    };
+
+    if (numvars <> size(intervals)) {
+        ERROR("Wrong number of intervals supplied.");
+    }
+    // check interval list for consistency
+    for (int i = 1; i <= numvars; i++) {
+        if (typeof(intervals[i]) <> "interval") {
+            ERROR("Input contains non-intervals!");
+        }
+    }
+    
+    // check if number of intervals = number of generators of I
+    if( numvars <> size(I)){ERROR ("wrong number of generators of interval"); }
+    
+    matrix Jacobi;
+    Jacobi=jacob(I);
+    list extension;
+    list extension_l;    //list in extension 
+    int i;
+    
+    //interval extension of jacobian matrix 
+    for (int j=1; j<=numvars; j++){
+    	for (i=1; i<=numvars; i++)
+    		{
+    		extension_l[i]= evalPolyAtInterval(Jacobi[j,i], #);
+    	
+    		}
+    	extension[j]=extension_l;
+    }
+    
+    return(extension);
+    
+}
+example
+{
+    echo = 2;
+    ring R = 0,(x,y),lp;
+    poly f=2x2+xy;
+	poly g=5x+y2;
+	ideal I=f,g;
+	interval J1=boundsToInterval(0,1);
+	interval J2=boundsToInterval(1,2);
+	list intervals; intervals[1]=J1; intervals[2]=J2;
+	
+	def result=intervalextensionJacobimat(I,intervals);
+	result[1];
+	result[2];
+	
+   
+}
+
+
+proc isElementOf( interval I, number a)
+"USAGE: is a element of I
+RETURN: 1 if a is an element of I else -1
+EXAMPLE: isElementOf "
+{
+	if( I[1]<= a && I[2]>=a)
+		{
+		return(1);
+		}
+	else 
+		{
+		return(-1);
+		}
+
+}
+example
+{
+    echo = 2;
+    ring R=0,x,lp;
+    interval I=boundsToInterval(1,3);
+    isElementOf(I,1/1);
+    isElementOf(I,0/1);
+}
+
+proc isZeroInBox( list box)
+"USAGE: is (0,...,0) element of the box
+RETURN: 1 if (0,...,0) element of I else -1   
+EXAMPLE: isZeroInBox"
+{
+	for (int i=1; i<=size(box);i++)
+		{
+		if(isElementOf(box[i], 0)==-1)
+			{
+			return(-1);
+			}
+		}
+	return(1);
+}  
+
+example
+{
+    echo = 2;
+    ring R=0,x,lp;
+    interval I=boundsToInterval(1,3);
+    interval J=boundsToInterval(-1,1);
+    list box;
+    box[1]=I;
+    box[2]=J;
+    isZeroInBox(box);
+    box[1]=J;
+    isZeroInBox(box);
+}
+
+
+proc splitBox(list box)  //box is list of intervals
+"USAGE: splits box in two smaller boxes
+RETURN: list of two smaller boxes
+EXAMPLE: splitBox"
+{
+
+	number maxi=0/1;
+	int maxi_index=0;
+	list splitted; //result
+	
+	//find index with maximal interval length
+	for (int i=1; i<= size(box); i++)
+		{
+		if (intervalSize(box[i])> maxi)
+			{
+			maxi= intervalSize(box[i]);
+			maxi_index=i;
+			}
+		}
+	
+	
+	
+	//now split box in two boxes 
+	//take the index maxi_index and split the box in the middle of the interval 
+	number middle = (box[maxi_index][1]+box[maxi_index][2])/2;
+	
+	splitted[1]=box;
+	splitted[2]=box;
+	
+	splitted[1][maxi_index]=boundsToInterval(box[maxi_index][1],middle);	
+	splitted[2][maxi_index]=boundsToInterval(middle,box[maxi_index][2]);
+	
+	return(splitted);
+}
+example {
+	echo=2;
+	ring R=0,x,lp;
+	interval I1=boundsToInterval(0,1);
+	interval I2=boundsToInterval(1,5);
+	interval I3=boundsToInterval(0,1);
+	list box;
+	box[1]=I1;
+	box[2]=I2;
+	box[3]=I3;
+	
+	list splitted;
+	splitted=splitBox(box);
+	splitted[1];
+	splitted[2];
+
+}
+
+proc simpleExclusionTest(ideal I, list start, number limitsize)  //start ist box in which we want to find the zeros
+"USAGE: exclusion test for roots with interval arithmetic
+RETURN: list of boxes 
+EXAMPLE: simpleExclusionTest "
+{
+	
+    list B_size;   //set of boxes smaller than size
+    list B_star;   //set of boxes which exactly contain one solution
+    list B;        //set of boxes 
+    list B_prime;  //help set of boxes
+    int i;
+    list evaluated; 
+    int counter_size=1;   //counter for number of elements in B_star and B_size and B_prime
+    int counter_star=1;
+    int counter_prime;
+    list splitted;
+   
+   	//1;
+    B[1]=start;
+    //2;
+    while (size(B) <> 0) 
+   		{
+   		// B_prime is empty set
+   		B_prime=list();
+   		counter_prime=1;
+   		//3;
+   		for (i=1; i<=size(B); i++)
+   			{
+   			//4;
+   			//typeof(evalIdealAtBox(I,B[i]));
+   			evaluated=evalIdealAtBox(I,B[i]);
+   			//44;
+   			
+   			//case that maybe there is a root in the box
+   			if (isZeroInBox(evalIdealAtBox(I,B[i])) == 1) 
+   				{
+   				
+   				//case that box is smaller than the input limitsize
+   				if (boxSize(B[i])<= limitsize){ B_size[counter_size]=B[i]; counter_size++;}
+   				
+   				// else split the box and put the smaller boxes to B_prime
+   				else 
+   					{
+   					splitted=splitBox(B[i]);
+   					B_prime[counter_prime]= splitted[1];
+   					counter_prime++;
+   					B_prime[counter_prime]= splitted[2];
+   					counter_prime++;
+   					}
+   				}
+   			//5;
+   			
+   			
+   			}
+   			
+   		// set B=B_prime
+   		B=B_prime;
+   		
+   		}
+   		return(B_size);
+    
+}
+
+example
+{
+    echo = 2;
+    
+    ring R=0,(x,y),lp;
+    ideal I=2x2-xy+2y2-2,2x2-3xy+3y2-2;  //ellipsen V(I) hat 4 elemente
+    list box;
+    box[1]=boundsToInterval(-2,2);
+    box[2]=boundsToInterval(-2,2);
+    
+    list result;
+    result=simpleExclusionTest(I,box,1/2);
+    size(result);
+    result[1];
+    result[2];
+    result[3];
+}
+
+
+proc intervalSize(interval I)
+"USAGE: size of an interval 
+RETURN: number 
+EXAMPLE: intervalSize "
+{
+	//if (typeof(I)<> interval){ERROR("input has to be an interval");} //klappt irgendwie nicht
+	return(I[2]-I[1]);
+}
+
+proc boxSize(list l)
+"USAGE: size of a box in R^n
+RETURN: number 
+EXAMPLE: boxSize "
+{
+	//noch test ob input wirklich liste von intervallen ist - noch machen
+
+	number maximum=0;
+	for (int i=1;i<=size(l);i++)
+		{
+		if (maximum<intervalSize(l[i]))
+			{
+			maximum = intervalSize(l[i]);
+			}
+		}
+	return(maximum);
+}
+
 // vim: ft=singular
