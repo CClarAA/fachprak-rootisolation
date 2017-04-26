@@ -504,7 +504,6 @@ EXAMPLE: simpleExclusionTest "
     list B;        //set of boxes
     list B_prime;  //help set of boxes
     int i;
-    int test;
 
     B[1]=start;
 
