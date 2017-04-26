@@ -464,25 +464,20 @@ example
     evalIdealAtBox(I,intervals);
 }
 
-proc lengthBox(list #)
+proc lengthBox(list box)
 "USAGE: length(#), # list of interval
 RETURN: length/size in measure sense
 EXAMPLE: compute length of boxes"
 {
-    // check interval list # for consistency
-    for (int j = 1; j <= size(#); j++) {
-        if (typeof(#[j]) <> "interval") {
-            ERROR("Input contains non-intervals!");
-        }
+    number maximum = 0;
+
+    for (int i=1; i<=size(box); i++) {
+        // check interval list # for consistency
+        if (typeof(box[i]) <> "interval") { ERROR("Box contains non-intervals!"); }
+
+        maximum = max(maximum, length(box[i]));
     }
 
-
-    number maximum=0;
-    for (int i=1;i<=size(#);i++) {
-        if (maximum<length(#[i])) {
-            maximum = length(#[i]);
-        }
-    }
     return(maximum);
 }
 example
