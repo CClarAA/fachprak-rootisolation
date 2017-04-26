@@ -504,34 +504,24 @@ EXAMPLE: simpleExclusionTest "
     list B;        //set of boxes
     list B_prime;  //help set of boxes
     int i;
-    list evaluated;
-    int counter_size=1;   //counter for number of elements in B_star and B_size and B_prime
-    int counter_star=1;
-    int counter_prime;
-    list splitted;
+    int test;
 
     B[1]=start;
 
     while (size(B) <> 0) {
         // B_prime is empty set
-        B_prime=list();
-        counter_prime=1;
+        B_prime = list();
 
         for (i=1; i<=size(B); i++) {
-            evaluated=evalIdealAtBox(I,B[i]);
-
             //case that maybe there is a root in the box
+
             if (testPolyBox(I,B[i]) == 0) {
                 //case that box is smaller than the input limitsize
                 if (lengthBox(B[i]) <= limitsize){
-                    B_size[counter_size]=B[i]; counter_size++;
+                    B_size = insert(B_size, B[i]);
                 } else {
                     // else split the box and put the smaller boxes to B_prime
-                    splitted=splitBox(B[i]);
-                    B_prime[counter_prime]= splitted[1];
-                    counter_prime++;
-                    B_prime[counter_prime]= splitted[2];
-                    counter_prime++;
+                    B_prime = B_prime + splitBox(B[i]);
                 }
             }
         }
