@@ -419,4 +419,161 @@ example
     box;
     splitBox(box);
 }
+
+proc evalIdealAtBox(ideal I, list intervals)
+"USAGE: evaluate ideal at list of intervals i.e. at a box
+RETURN: list
+EXAMPLE: evalIdealAtBox"
+{
+	int numvars = nvars(basering);
+	
+	// check interval list for consistency
+    for (int i = 1; i <= numvars; i++) {
+        if (typeof(intervals[i]) <> "interval") {
+            ERROR("Input contains non-intervals!");
+        }
+    }
+    
+    // check if number of intervals is number of variables in basering
+    if (numvars<> size(I))
+    	{
+    	ERROR("number of variables and number of intervals not equal");
+    	}
+    // now evaluate ideal
+    list resu;
+    for (int j=1; j<= size(I);j++)
+    	{
+    	resu[j]=evalPolyAtInterval(I[j], intervals);
+    	}
+    return(resu);
+}
+example
+{
+    echo = 2;
+    ring R = 0,(x,y),lp;
+    interval I1 = boundsToInterval(0/1, 1/1); I1;
+    interval I2 = boundsToInterval(0/1, 1/1); I2;
+
+    poly f = xy2 + 2x2 + (3/2)*y3x  + 1;
+    poly g= 3x2 + 2y;
+    
+    ideal I=f,g;
+	list intervals;
+	intervals[1]=I1;
+	intervals[2]=I2;
+
+    evalIdealAtBox(I,intervals);
+    
+}
+
+proc lengthBox(list #)
+"USAGE: length(#), # list of interval
+RETURN: length/size in measure sense
+EXAMPLE: compute length of boxes"
+{
+    // check interval list # for consistency
+    for (int j = 1; j <= size(#); j++) {
+        if (typeof(#[j]) <> "interval") {
+            ERROR("Input contains non-intervals!");
+        }
+    }
+
+
+	number maximum=0;
+	for (int i=1;i<=size(#);i++)
+		{
+		if (maximum<length(#[i]))
+			{
+			maximum = length(#[i]);
+			}
+		}
+	return(maximum);
+}
+example
+{
+    echo = 2;
+    ring R = 0,(x,y),lp;
+
+    interval I = boundsToInterval(0, 1);    I;
+    interval J = boundsToInterval(1,3);     J;
+    
+    list box;
+    box[1]= I; box[2]=J;
+    
+    lengthBox(box);
+}
+
+proc simpleExclusionTest(ideal I, list start, number limitsize)  //start ist box in which we want to find the zeros
+"USAGE: exclusion test for roots with interval arithmetic
+RETURN: list of boxes 
+EXAMPLE: simpleExclusionTest "
+{
+	
+    list B_size;   //set of boxes smaller than size
+    list B_star;   //set of boxes which exactly contain one solution
+    list B;        //set of boxes 
+    list B_prime;  //help set of boxes
+    int i;
+    list evaluated; 
+    int counter_size=1;   //counter for number of elements in B_star and B_size and B_prime
+    int counter_star=1;
+    int counter_prime;
+    list splitted;
+   
+    B[1]=start;
+
+    while (size(B) <> 0) 
+   		{
+   		// B_prime is empty set
+   		B_prime=list();
+   		counter_prime=1;
+   		
+   		for (i=1; i<=size(B); i++)
+   			{
+   			
+   			evaluated=evalIdealAtBox(I,B[i]);
+   			
+   			//case that maybe there is a root in the box
+   			if (testPolyBox(I,B[i]) == 0) 
+   				{
+   				//case that box is smaller than the input limitsize
+   				if (lengthBox(B[i])<= limitsize){ B_size[counter_size]=B[i]; counter_size++;}
+   				
+   				// else split the box and put the smaller boxes to B_prime
+   				else 
+   					{
+   					splitted=splitBox(B[i]);
+   					B_prime[counter_prime]= splitted[1];
+   					counter_prime++;
+   					B_prime[counter_prime]= splitted[2];
+   					counter_prime++;
+   					}
+   				}
+   			
+   			}
+   			
+   		// set B=B_prime
+   		B=B_prime;
+   		
+   		}
+   		return(B_size);
+    
+}
+
+example
+{
+    echo = 2;
+    
+    ring R=0,(x,y),lp;
+    ideal I=2x2-xy+2y2-2,2x2-3xy+3y2-2;  //ellipsen V(I) hat 4 elemente
+    list box;
+    box[1]=boundsToInterval(-2,2);
+    box[2]=boundsToInterval(-2,2);
+    
+    list result;
+    result=simpleExclusionTest(I,box,1/2);
+    size(result);
+    result;
+}
+
 // vim: ft=singular
