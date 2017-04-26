@@ -499,13 +499,17 @@ proc simpleExclusionTest(ideal I, list start, number limitsize)  //start ist box
 RETURN: list of boxes
 EXAMPLE: simpleExclusionTest "
 {
-    list B_size;   //set of boxes smaller than size
-    list B_star;   //set of boxes which exactly contain one solution
-    list B;        //set of boxes
-    list B_prime;  //help set of boxes
-    int i;
+    //set of boxes smaller than size
+    list B_size;
+    //set of boxes which exactly contain one solution
+    list B_star;
+    //set of boxes initialised to input
+    list B = list(start);
+    //help set of boxes
+    list B_prime;
 
-    B[1]=start;
+    int i;
+    int zeroTest;
 
     while (size(B) <> 0) {
         // B_prime is empty set
@@ -513,8 +517,11 @@ EXAMPLE: simpleExclusionTest "
 
         for (i=1; i<=size(B); i++) {
             //case that maybe there is a root in the box
+            zeroTest = testPolyBox(I,B[i]);
 
-            if (testPolyBox(I,B[i]) == 0) {
+            // does not yet occur
+            if (zeroTest == 1) { B_star = append(B_star, B[i]); i++; continue };
+            if (zeroTest == 0) {
                 //case that box is smaller than the input limitsize
                 if (lengthBox(B[i]) <= limitsize){
                     B_size = insert(B_size, B[i]);
@@ -541,7 +548,7 @@ example
     box[2]=boundsToInterval(-2,2);
 
     list result;
-    result=simpleExclusionTest(I,box,1/2);
+    result=simpleExclusionTest(I,box,1/128);
     size(result);
     result;
 }
