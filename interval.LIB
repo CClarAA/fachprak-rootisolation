@@ -20,6 +20,7 @@ PROCEDURES:
 length                  length/size if interval
 boundsToInterval        construct interval for given bounds.
 evalPolyAtInterval      evaluate interval extension of polynomial
+simpleExclusionTest     first version of our exclusion test
 ";
 ///////////////////////////////////////////////////////////////////
 
@@ -36,7 +37,16 @@ static proc mod_init()
     system("install", "interval", "*",      intervalMultiply,   2);
     system("install", "interval", "/",      intervalDivide,     2);
     system("install", "interval", "^",      intervalPotentiate, 2);
+
+    newstruct("box", "list intervals");
+    system("install", "box", "=",     boxAssign, 1);
+    system("install", "box", "[",     boxGet,    2);
+    system("install", "box", "print", boxPrint,  1);
 }
+
+///////////////////////////////////////////////////////////////////
+
+// INTERVAL FUNCTIONS
 
 proc boundsToInterval(number a, number b)
 "USAGE: boundsToInterval(a, b), a, b number
@@ -258,37 +268,184 @@ example
     J^4;
 }
 
+///////////////////////////////////////////////////////////////////
+
+// BOX FUNCTIONS
+
+proc boxAssign(list intervals)
+"USAGE: B = I1,I2,.., I1, I2 interval
+RETURN: Box consisting of given intervals honoring amount of ring variables
+EXAMPLE: construct box from intervals"
+{
+    int v = nvars(basering);
+    int s = size(intervals);
+    box B;
+
+    // make sure box has same number of intervals as ring variables
+    interval z = 0;
+    for (int i = 1; i <= v; i++) {
+        if (i <= s) {
+            if (typeof(intervals[i]) == "interval") {
+                B.intervals[i] = intervals[i];
+            } else {
+                ERROR("Non-interval given.");
+            }
+        } else {
+            B.intervals[i] = z;
+        }
+    }
+
+    return(B);
+}
+example
+{
+    echo = 2;
+
+    ring R = 0,x,lp;
+    interval I = boundsToInterval(1, 2);
+    box B = list(I); B;
+
+    ring S = 0,x(1..15),lp;
+    I = boundsToInterval(1/2, 2/3);
+    B = list(I, I^2, I^3); B;
+}
+
+proc boxSet(box B, int n, interval I)
+"USAGE: boxSet(B, n, I), B box, n int, I interval
+RETURN: B where B[i] == I
+EXAMPLE: modify box"
+{
+    if (n >= 1 && n <= nvars(basering)) {
+        B.intervals[n] = I;
+    }
+    return(B);
+}
+example
+{
+    echo = 2;
+    ring R = 0,x(1..3),lp;
+
+    interval I = 1;
+    box B = list(I); B;
+    B = boxSet(B, 3, boundsToInterval(1, 2));   B;
+}
+
+// Singular does not allow C-like printf behaviour, i.e. no newline after printing
+// thus we must output the boxes one line at a time
+proc boxPrint(box B)
+"USAGE: B;, B box,
+RETURN: pretty output
+EXAMPLE: output a box"
+{
+    int n = nvars(basering);
+    for (int i = 1; i <= n; i++) {
+        print(B[i]);
+    }
+}
+example
+{
+    echo = 2;
+    ring R = 0,x(1..4),lp;
+
+    interval I = boundsToInterval(1, 2);
+    box B = list(I,I+1,I+2,I+4);  B;
+    B = list(I,I^2);              B;
+}
+
+proc boxGet(box B, int n)
+"USAGE: B[n], B box, n int
+RETURN: n-th interval of box
+EXAMPLE: returns interval"
+{
+    return(B.intervals[n]);
+}
+example
+{
+    echo = 2;
+    ring R = 0,x(1..5),lp;
+
+    interval I = boundsToInterval(1/3, 5);
+    box B = list(I, I/I, I+I, I-1/I, I^4);
+
+    B;
+    B[3];
+}
+
+proc lengthBox(box B)
+"USAGE: length(B), B box
+RETURN: length/size in measure sense
+EXAMPLE: compute length of boxes"
+{
+    number maximum = 0;
+    int n = nvars(basering);
+
+    for (int i=1; i <= n; i++) { maximum = max(maximum, length(B[i])); }
+
+    return(maximum);
+}
+example
+{
+    echo = 2;
+    ring R = 0,(x,y),lp;
+
+    interval I = boundsToInterval(0, 1);    I;
+    interval J = boundsToInterval(1,3);     J;
+
+    box B = list(I, J);
+
+    lengthBox(B);
+}
+
+proc splitBox(box B)
+"USAGE: splitBox(box), box list of intervals
+RETURN: new list of smaller boxes
+EXAMPLE: split two-dimensional interval into two"
+{
+    // at first split only at largest interval
+    int imax = 1;
+    int n = nvars(basering);
+
+    for (int i = 2; i <= n; i++) {
+        if (length(B[i]) > length(B[imax])) { imax = i; }
+    }
+
+    list boxes = list();
+    number mean = (B[imax][1] + B[imax][2])/2;
+
+    boxes = insert(boxes, boxSet(B, imax, boundsToInterval(B[imax][1], mean)));
+    boxes = insert(boxes, boxSet(B, imax, boundsToInterval(mean, B[imax][2])));
+
+    return(boxes);
+}
+example
+{
+    echo = 2;
+    ring R = 0,(x,y),lp;
+
+    box B = list(boundsToInterval(0,1),
+                 boundsToInterval(0,2));
+
+    B;
+    splitBox(B);
+}
+
+///////////////////////////////////////////////////////////////////
+
+// POLYNOMIAL APPLICATIONS
+
 // naive (?) implementation
-proc evalPolyAtInterval(poly f, list #)
-"USAGE: evalPolyAtInterval(f, intervals), f poly, intervals list of of intervals or:
-        evalPolyAtInterval(f, I1, I2, ..) f poly, I1..In intervals
+proc evalPolyAtInterval(poly f, box B)
+"USAGE: evalPolyAtInterval(f, B), f poly, B box
 RETURN: interval extension ff(intervals)
 EXAMPLE: computes interval extension of polynomial f"
 {
     int numvars = nvars(basering);
-    list intervals;
 
-    // accept different input types
-    if (size(#) == 1 && typeof(#[1]) == "list") {
-        intervals = #[1];
-    } else {
-        intervals = #;
-    };
-
-    if (numvars <> size(intervals)) {
-        ERROR("Wrong number of intervals supplied.");
-    }
-    // check interval list for consistency
-    for (int i = 1; i <= numvars; i++) {
-        if (typeof(intervals[i]) <> "interval") {
-            ERROR("Input contains non-intervals!");
-        }
-    }
-
-    interval resultMonom;
     // neutral elemen of addition
     interval resultWhole = 0;
+    interval resultMonom;
 
+    int i;
     number coeff;
     intvec exponent;
 
@@ -301,7 +458,7 @@ EXAMPLE: computes interval extension of polynomial f"
         resultMonom = 1;
 
         for (i = 1; i <= numvars; i++) {
-            resultMonom = resultMonom * intervals[i] ^ exponent[i];
+            resultMonom = resultMonom * B[i] ^ exponent[i];
         }
 
         resultWhole = resultWhole + coeff * resultMonom;
@@ -314,21 +471,22 @@ example
 {
     echo = 2;
     ring R = 0,x,lp;
-    interval I1 = boundsToInterval(0/1, 1/1); I1;
+    interval I1 = boundsToInterval(0, 1); I1;
 
     poly f = x3 + 4x + 3;
 
-    evalPolyAtInterval(f, I1);
+    evalPolyAtInterval(f, list(I1));
 
     ring S = 0,(x,y,z),lp;
-    interval I2 = boundsToInterval(0/1, 1/1); I2;
+    interval I2 = boundsToInterval(0, 1);
+    box B = list(I2, I2, I2);
 
     poly f = xyz2 + 2x2 + (3/2)*y3x + z + 1;
 
-    evalPolyAtInterval(f, I2, I2, I2);
+    evalPolyAtInterval(f, B);
 }
 
-proc testPolyBox(ideal I, list #)
+proc testPolyBox(ideal I, box B)
 "USAGE: testPolyBox(I, intervals) or testPolyBox(I, I1, I2, ..)
         I ideal, intervals list of intervals, I1, I2, .. intervals
 RETURN: -1, if ideal has no zeros in given box, 1, if unique zero in given box
@@ -336,29 +494,12 @@ RETURN: -1, if ideal has no zeros in given box, 1, if unique zero in given box
 EXAMPLE: tests the above for intersection of ellipses."
 {
     int numvars = nvars(basering);
-    list intervals;
-
-    // accept different input types
-    if (size(#) == 1 && typeof(#[1]) == "list") {
-        intervals = #[1];
-    } else {
-        intervals = #;
-    };
-
-    if (numvars <> size(intervals)) {
-        ERROR("Wrong number of intervals supplied.");
-    }
-    // check interval list for consistency
-    for (int i = 1; i <= numvars; i++) {
-        if (typeof(intervals[i]) <> "interval") {
-            ERROR("Input contains non-intervals!");
-        }
-    }
+    int i;
 
     interval tmp;
 
     for (i = 1; i <= ncols(I); i++) {
-        tmp = evalPolyAtInterval(I[i], intervals);
+        tmp = evalPolyAtInterval(I[i], B);
         // check if 0 contained in every interval
         // return -1 if not
         if (tmp[1]*tmp[2] > 0) { return(-1); }
@@ -378,49 +519,13 @@ example
 
     interval unit = boundsToInterval(0, 1);
     // there may be common zeros in [0,1]x[0,1]
-    testPolyBox(I, unit, unit);
+    testPolyBox(I, list(unit, unit));
 
     // there are no common zeros in [0,0.5]x[0,0.5]
-    testPolyBox(I, unit/2, unit/2);
+    testPolyBox(I, list(unit/2, unit/2));
 }
 
-proc splitBox(list box)
-"USAGE: splitBox(box), box list of intervals
-RETURN: new list of smaller boxes
-EXAMPLE: split two-dimensional interval into two"
-{
-    // at first split only at largest interval
-    int imax = 1;
-
-    for (int i = 2; i <= size(box); i++) {
-        if (length(box[i]) > length(box[imax])) { imax = i; }
-    }
-
-    list boxes = list();
-    list tmp;
-    number mean = (box[imax][1] + box[imax][2])/2;
-
-    for (i=1; i<=2; i++) {
-        tmp = box;
-        tmp[imax] = boundsToInterval(tmp[imax][i], mean);
-        boxes = insert(boxes, tmp);
-    }
-
-    return(boxes);
-}
-example
-{
-    echo = 2;
-    ring R = 0,(x,y),lp;
-
-    list box = boundsToInterval(0,1),
-               boundsToInterval(0,2);
-
-    box;
-    splitBox(box);
-}
-
-proc evalIdealAtBox(ideal I, list intervals)
+proc evalIdealAtBox(ideal I, box intervals)
 "USAGE: evaluate ideal at list of intervals i.e. at a box
 RETURN: list
 EXAMPLE: evalIdealAtBox"
@@ -464,40 +569,10 @@ example
     evalIdealAtBox(I,intervals);
 }
 
-proc lengthBox(list box)
-"USAGE: length(#), # list of interval
-RETURN: length/size in measure sense
-EXAMPLE: compute length of boxes"
-{
-    number maximum = 0;
-
-    for (int i=1; i<=size(box); i++) {
-        // check interval list # for consistency
-        if (typeof(box[i]) <> "interval") { ERROR("Box contains non-intervals!"); }
-
-        maximum = max(maximum, length(box[i]));
-    }
-
-    return(maximum);
-}
-example
-{
-    echo = 2;
-    ring R = 0,(x,y),lp;
-
-    interval I = boundsToInterval(0, 1);    I;
-    interval J = boundsToInterval(1,3);     J;
-
-    list box;
-    box[1]= I; box[2]=J;
-
-    lengthBox(box);
-}
-
-proc simpleExclusionTest(ideal I, list start, number limitsize)  //start ist box in which we want to find the zeros
+proc simpleExclusionTest(ideal I, box start, number limitsize)
 "USAGE: exclusion test for roots with interval arithmetic
 RETURN: list of boxes
-EXAMPLE: simpleExclusionTest "
+EXAMPLE: simpleExclusionTest for intersection of two ellipses"
 {
     //set of boxes smaller than size
     list B_size;
@@ -541,16 +616,15 @@ example
 {
     echo = 2;
 
-    ring R=0,(x,y),lp;
-    ideal I=2x2-xy+2y2-2,2x2-3xy+3y2-2;  //ellipsen V(I) hat 4 elemente
-    list box;
-    box[1]=boundsToInterval(-2,2);
-    box[2]=boundsToInterval(-2,2);
+    ring R = 0,(x,y),lp;
+    ideal I = 2x2-xy+2y2-2,2x2-3xy+3y2-2;  // V(I) has four elements
 
-    list result;
-    result=simpleExclusionTest(I,box,1/128);
-    size(result);
+    interval i = boundsToInterval(-3/2,3/2);
+    box B = list(i, i);
+
+    list result = simpleExclusionTest(I, B, 1/128);
     result;
+    size(result);
 }
 
 // vim: ft=singular
