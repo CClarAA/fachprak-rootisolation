@@ -1,0 +1,22 @@
+LIB "interval.LIB";
+
+example intervalAssign;
+example intervalGet;
+example length;
+example intervalPrint;
+example intervalAdd;
+example intervalNegate;
+example intervalSubtract;
+example intervalMultiply;
+example intervalDivide;
+example intervalPotentiate;
+example boxAssign;
+example boxSet;
+example boxPrint;
+example boxGet;
+example lengthBox;
+example splitBox;
+example evalPolyAtInterval;
+example testPolyBox;
+example evalIdealAtBox;
+example simpleExclusionTest;
