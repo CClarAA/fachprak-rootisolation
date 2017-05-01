@@ -3,6 +3,7 @@ LIB "interval.LIB";
 example intervalAssign;
 example intervalGet;
 example length;
+example intervalString;
 example intervalPrint;
 example intervalAdd;
 example intervalNegate;

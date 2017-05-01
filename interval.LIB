@@ -30,6 +30,7 @@ static proc mod_init()
 
     system("install", "interval", "[",      intervalGet,        2);
     system("install", "interval", "=",      intervalAssign,     1);
+    system("install", "interval", "string", intervalString,     1);
     system("install", "interval", "print",  intervalPrint,      1);
     system("install", "interval", "+",      intervalAdd,        2);
     system("install", "interval", "-",      intervalNegate,     1);
@@ -122,11 +123,27 @@ example
     length(I);
 }
 
+proc intervalString(interval I)
+"USAGE: string(I), I interval
+RETURN: string representation of I
+EXAMPLE: convert interval to string"
+{
+    return(string("[", I[1], ", ", I[2], "]"));
+}
+example
+{
+    echo = 2;
+    ring R = 0,x,lp;
+
+    interval I = boundsToInterval(0, 3/2);
+    string("I = ", I, "!");
+}
+
 proc intervalPrint(interval I)
 "USAGE: I;, I interval
 EXAMPLE: prints interval in readable format"
 {
-    string("[", I[1], ", ", I[2], "]");
+    string(I);
 }
 example
 {
@@ -330,17 +347,12 @@ example
     B = boxSet(B, 3, boundsToInterval(1, 2));   B;
 }
 
-// Singular does not allow C-like printf behaviour, i.e. no newline after printing
-// thus we must output the boxes one line at a time
 proc boxPrint(box B)
 "USAGE: B;, B box,
 RETURN: pretty output
 EXAMPLE: output a box"
 {
-    int n = nvars(basering);
-    for (int i = 1; i <= n; i++) {
-        print(B[i]);
-    }
+    string(B.intervals);
 }
 example
 {
