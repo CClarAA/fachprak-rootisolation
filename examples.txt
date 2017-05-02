@@ -40,3 +40,5 @@ example evalJacobianAtBox;
 example testPolyBox;
 example evalIdealAtBox;
 example simpleExclusionTest;
+
+quit;

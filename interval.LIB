@@ -36,6 +36,7 @@ bounds                  construct interval for given bounds.
 
 intervalmatrixInit      initialises an interval matrix
 unitMatrix              unit matrix
+applyMatrix             apply matrix to box
 
 evalPolyAtInterval      evaluate interval extension of polynomial
 simpleExclusionTest     first version of our exclusion test
@@ -849,6 +850,42 @@ example
 
     A * adjunct(A);
     det(A);
+}
+
+proc applyMatrix(ivmat A, box b)
+"USAGE: applyMatrix(A, b), A ivmat, b box
+RETURN: A*b
+EXAMPLE: apply matrix to box"
+{
+    int n = nvars(basering);
+
+    if (ncols(A) <> n || nrows(A) <> n) { ERROR("Matrix has wrong dimensions"); }
+
+    int i, j;
+    list result;
+    interval tmp;
+
+    for (i = 1; i <= n; i++) {
+        tmp = 0;
+        for (j = 1; j <= n; j++) {
+            tmp = tmp + A[i][j] * b[j];
+        }
+        result[i] = tmp;
+    }
+
+    return(box(result));
+}
+example
+{
+    echo = 2;
+    ring R = 0,(x,y,z),lp;
+
+    ideal I = xyz3+z2y2+x,x4+y3+2z+3,xyz+1/2;
+    interval J = bounds(1/2, 3/2);
+    box B = list(J,J,J);
+
+    ivmat A = evalJacobianAtBox(I, B); A;
+    applyMatrix(A, B);
 }
 
 ///////////////////////////////////////////////////////////////////
