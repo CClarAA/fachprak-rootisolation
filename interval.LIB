@@ -21,6 +21,7 @@ print       intervalPrint       pretty print
 =           boxSet              assigning
 [           boxGet              indexing
 print       boxPrint            printing
+intersect   boxIntersect        intersection
 
 // intervalmatrices
 [           ivmatGet            indexing
@@ -58,9 +59,10 @@ static proc mod_init()
     system("install", "interval", "^",      intervalPotentiate, 2);
 
     newstruct("box", "list intervals");
-    system("install", "box", "=",     boxAssign, 1);
-    system("install", "box", "[",     boxGet,    2);
-    system("install", "box", "print", boxPrint,  1);
+    system("install", "box", "=",           boxAssign,      1);
+    system("install", "box", "[",           boxGet,         2);
+    system("install", "box", "print",       boxPrint,       1);
+    system("install", "box", "intersect",   boxIntersect,   4);
 
     newstruct("ivmat", "list rows");
     system("install", "ivmat", "print", ivmatPrint, 1);
@@ -465,6 +467,57 @@ example
 
     B;
     splitBox(B);
+}
+
+proc boxIntersect
+"USAGE: intersect(B1, B2, ...) Bi box
+RETURN: intersection B of the boxes Bi or -1 if the intersection is empty
+EXAMPLE: intersect boxes"
+{
+    int ninput = size(#);
+    if (ninput == 0) { return(-1) };
+
+    int n = nvars(basering);
+    int i, j;
+
+    for (i = 1; i <= ninput; i++) {
+        if (typeof(#[i]) <> "box") {
+            ERROR("Need to intersect boxes.");
+        }
+    }
+
+    list result;
+    number lower, upper;
+
+    for (i = 1; i <= n; i++) {
+        lower = #[1][i][1];
+        upper = #[1][i][2];
+        for (j = 2; j <= ninput; j ++) {
+            lower = max(lower, #[j][i][1]);
+            upper = min(upper, #[j][i][2]);
+        }
+
+        if (upper < lower) { return(-1); }
+
+        result[i] = bounds(lower, upper);
+    }
+
+    return(box(result));
+}
+example
+{
+    echo = 2;
+    ring R = 0,(x,y),lp;
+
+    interval I = bounds(0,1);
+    interval J = bounds(1/2, 3/2);
+
+    box B = list(I, J);
+    box C = list(J, I);
+    box D = list(I, I + 2);
+
+    intersect(B, C);
+    intersect(C, D);
 }
 
 ///////////////////////////////////////////////////////////////////
