@@ -976,46 +976,31 @@ example
     testPolyBox(I, list(unit/2, unit/2));
 }
 
-proc evalIdealAtBox(ideal I, box intervals)
+proc evalIdealAtBox(ideal I, box B)
 "USAGE: evaluate ideal at list of intervals i.e. at a box
 RETURN: list
 EXAMPLE: evalIdealAtBox"
 {
-    int numvars = nvars(basering);
-
-    // check interval list for consistency
-    for (int i = 1; i <= numvars; i++) {
-        if (typeof(intervals[i]) <> "interval") {
-            ERROR("Input contains non-intervals!");
-        }
-    }
-
-    // check if number of intervals is number of variables in basering
-    if (numvars<> size(I))
-    {
-        ERROR("number of variables and number of intervals not equal");
-    }
-    // now evaluate ideal
     list resu;
-    for (int j=1; j<= size(I);j++) {
-        resu[j]=evalPolyAtInterval(I[j], intervals);
+
+    for (int j = 1; j <= size(I); j++) {
+        resu[j]=evalPolyAtInterval(I[j], B);
     }
+
     return(box(resu));
 }
 example
 {
     echo = 2;
     ring R = 0,(x,y),lp;
-    interval I1 = boundsToInterval(0/1, 1/1); I1;
-    interval I2 = boundsToInterval(0/1, 1/1); I2;
+    interval I1 = boundsToInterval(0, 1); I1;
+    interval I2 = boundsToInterval(0, 1); I2;
 
     poly f = xy2 + 2x2 + (3/2)*y3x  + 1;
-    poly g= 3x2 + 2y;
+    poly g = 3x2 + 2y;
 
-    ideal I=f,g;
-    list intervals;
-    intervals[1]=I1;
-    intervals[2]=I2;
+    ideal I = f,g;
+    list intervals = I1,I2;
 
     evalIdealAtBox(I,intervals);
 }
@@ -1059,7 +1044,7 @@ EXAMPLE: simpleExclusionTest for intersection of two ellipses"
         }
 
         // set B=B_prime
-        B=B_prime;
+        B = B_prime;
     }
     return(B_size);
 }
