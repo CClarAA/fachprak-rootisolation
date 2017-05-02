@@ -32,7 +32,7 @@ det         determinant         determinant
 
 PROCEDURES:
 length                  length/size if interval
-boundsToInterval        construct interval for given bounds.
+bounds                  construct interval for given bounds.
 
 intervalmatrixInit      initialises an interval matrix
 unitMatrix              unit matrix
@@ -74,8 +74,8 @@ static proc mod_init()
 
 // INTERVAL FUNCTIONS
 
-proc boundsToInterval(number a, number b)
-"USAGE: boundsToInterval(a, b), a, b number
+proc bounds(number a, number b)
+"USAGE: bounds(a, b), a, b number
 RETURN: interval [a, b]."
 {
     // depends on inplementation (TODO)
@@ -95,7 +95,7 @@ proc intervalAssign(def input)
 RETURN: interval I
 EXAMPLE: assigning intervals with ="
 {
-    if(typeof(input) == "number") { return(boundsToInterval(input, input)); }
+    if(typeof(input) == "number") { return(bounds(input, input)); }
     if(typeof(input) == "int"   ) { return(intervalAssign(number(input)));  }
 
     ERROR("input not supported.");
@@ -123,7 +123,7 @@ example
 {
     echo = 2;
     ring R = 0,x,lp;
-    interval I = boundsToInterval(0/1, 1/1);
+    interval I = bounds(0/1, 1/1);
 
     I[1];
     I[2];
@@ -141,10 +141,10 @@ example
     echo = 2;
     ring R = 0,x,lp;
 
-    interval I = boundsToInterval(0, 1);    I;
+    interval I = bounds(0, 1);    I;
     length(I);
 
-    I = boundsToInterval(-1/2, 3/7);        I;
+    I = bounds(-1/2, 3/7);        I;
     length(I);
 }
 
@@ -160,7 +160,7 @@ example
     echo = 2;
     ring R = 0,x,lp;
 
-    interval I = boundsToInterval(0, 3/2);
+    interval I = bounds(0, 3/2);
     string("I = ", I, "!");
 }
 
@@ -175,7 +175,7 @@ example
     echo = 2;
     ring R = 0,x,lp;
 
-    interval I = boundsToInterval(1/5, 7/3);
+    interval I = bounds(1/5, 7/3);
     I;
 }
 
@@ -185,14 +185,14 @@ RETURN: I+J
 EXAMPLE: adds two intervalls"
 {
     // independent of implementation
-    return(boundsToInterval(I[1] + J[1], I[2] + J[2]));
+    return(bounds(I[1] + J[1], I[2] + J[2]));
 }
 example
 {
     echo = 2;
     ring R = 0,x,lp;
-    interval I = boundsToInterval(0/1, 1/2);    I;
-    interval J = boundsToInterval(2/3, 1/1);    J;
+    interval I = bounds(0/1, 1/2);    I;
+    interval J = bounds(2/3, 1/1);    J;
 
     J = I+J;                                    J;
 }
@@ -202,13 +202,13 @@ proc intervalNegate(interval I)
 RETURN: -I
 EXAMPLE: computes negation of interval"
 {
-    return(boundsToInterval(-I[2], -I[1]));
+    return(bounds(-I[2], -I[1]));
 }
 example
 {
     echo = 2;
     ring R = 0,x,lp;
-    interval I = boundsToInterval(1/3, 1/2);    I;
+    interval I = bounds(1/3, 1/2);    I;
     I = -I;                                     I;
 }
 
@@ -223,8 +223,8 @@ example
 {
     echo = 2;
     ring R = 0,x,lp;
-    interval I = boundsToInterval(3/2, 14/5);   I;
-    interval J = boundsToInterval(1/7, 2/3);    J;
+    interval I = bounds(3/2, 14/5);   I;
+    interval J = bounds(1/7, 2/3);    J;
 
     J = I - J;                                  J;
 }
@@ -237,15 +237,15 @@ EXAMPLE: multiplies intervals (and scalars)"
     number lo = min(I[1] * J[1], I[1] * J[2], I[2] * J[1], I[2]*J[2]);
     number up = max(I[1] * J[1], I[1] * J[2], I[2] * J[1], I[2]*J[2]);
 
-    return(boundsToInterval(lo, up));
+    return(bounds(lo, up));
 }
 example
 {
     echo = 2;
     ring R = 0,x,lp;
 
-    interval I = boundsToInterval(1/3, 3/1);    I;
-    interval J = boundsToInterval(-2/5, 1/7);   J;
+    interval I = bounds(1/3, 3/1);    I;
+    interval J = bounds(-2/5, 1/7);   J;
 
     J = I * J;                                  J;
 
@@ -258,7 +258,7 @@ RETURN: I/J (division)
 EXAMPLE: divide intervals, demonstrate zero case"
 {
     if (J[1]*J[2] > 0) {
-        interval Jinv = boundsToInterval(1/J[2], 1/J[1]);
+        interval Jinv = bounds(1/J[2], 1/J[1]);
         return(I * Jinv);
     } else {
         ERROR("Divisor contains zero.");
@@ -269,13 +269,13 @@ example
     echo = 2;
     ring R = 0,x,lp;
 
-    interval I = boundsToInterval(1/1, 3/1);    I;
-    interval J = boundsToInterval(2/3, 3/2);    J;
+    interval I = bounds(1/1, 3/1);    I;
+    interval J = bounds(2/3, 3/2);    J;
 
     I/J;
     J/I;
 
-    I = boundsToInterval(-2/1, 1/2);            I;
+    I = bounds(-2/1, 1/2);            I;
 
     I/J;
     J/I;
@@ -287,9 +287,9 @@ RETURN: I^n with stricter bounds than naive multiplication
 EXAMPLE: potentiates an interval"
 {
     if (n % 2 == 1 || I[1]*I[2] >= 0) {
-        return(boundsToInterval(I[1]^n, I[2]^n));
+        return(bounds(I[1]^n, I[2]^n));
     } else {
-        return(boundsToInterval(0, max(I[1]^n, I[2]^n)));
+        return(bounds(0, max(I[1]^n, I[2]^n)));
     }
 }
 example
@@ -297,13 +297,13 @@ example
     echo = 2;
     ring R = 0,x,lp;
 
-    interval I = boundsToInterval(-1/3, 3/2);   I;
+    interval I = bounds(-1/3, 3/2);   I;
     I^1;
     I^2;
     I^3;
     I^4;
 
-    interval J = boundsToInterval(1/5, 2/5);    J;
+    interval J = bounds(1/5, 2/5);    J;
     J^1;
     J^2;
     J^3;
@@ -344,11 +344,11 @@ example
     echo = 2;
 
     ring R = 0,x,lp;
-    interval I = boundsToInterval(1, 2);
+    interval I = bounds(1, 2);
     box B = list(I); B;
 
     ring S = 0,x(1..15),lp;
-    I = boundsToInterval(1/2, 2/3);
+    I = bounds(1/2, 2/3);
     B = list(I, I^2, I^3); B;
 }
 
@@ -369,7 +369,7 @@ example
 
     interval I = 1;
     box B = list(I); B;
-    B = boxSet(B, 3, boundsToInterval(1, 2));   B;
+    B = boxSet(B, 3, bounds(1, 2));   B;
 }
 
 proc boxPrint(box B)
@@ -384,7 +384,7 @@ example
     echo = 2;
     ring R = 0,x(1..4),lp;
 
-    interval I = boundsToInterval(1, 2);
+    interval I = bounds(1, 2);
     box B = list(I,I+1,I+2,I+4);  B;
     B = list(I,I^2);              B;
 }
@@ -401,7 +401,7 @@ example
     echo = 2;
     ring R = 0,x(1..5),lp;
 
-    interval I = boundsToInterval(1/3, 5);
+    interval I = bounds(1/3, 5);
     box B = list(I, I/I, I+I, I-1/I, I^4);
 
     B;
@@ -425,8 +425,8 @@ example
     echo = 2;
     ring R = 0,(x,y),lp;
 
-    interval I = boundsToInterval(0, 1);    I;
-    interval J = boundsToInterval(1,3);     J;
+    interval I = bounds(0, 1);    I;
+    interval J = bounds(1,3);     J;
 
     box B = list(I, J);
 
@@ -449,8 +449,8 @@ EXAMPLE: split two-dimensional interval into two"
     list boxes = list();
     number mean = (B[imax][1] + B[imax][2])/2;
 
-    boxes = insert(boxes, boxSet(B, imax, boundsToInterval(B[imax][1], mean)));
-    boxes = insert(boxes, boxSet(B, imax, boundsToInterval(mean, B[imax][2])));
+    boxes = insert(boxes, boxSet(B, imax, bounds(B[imax][1], mean)));
+    boxes = insert(boxes, boxSet(B, imax, bounds(mean, B[imax][2])));
 
     return(boxes);
 }
@@ -459,8 +459,8 @@ example
     echo = 2;
     ring R = 0,(x,y),lp;
 
-    box B = list(boundsToInterval(0,1),
-                 boundsToInterval(0,2));
+    box B = list(bounds(0,1),
+                 bounds(0,2));
 
     B;
     splitBox(B);
@@ -559,7 +559,7 @@ example
     echo = 2;
     ring R = 0,(x,y),lp;
 
-    interval I = boundsToInterval(1, 2);
+    interval I = bounds(1, 2);
     ivmat A = ivmatAssign(2, 2, I, I^2, I/I, -I);
     A;
 }
@@ -591,7 +591,7 @@ example
     echo = 2;
     ring R = 0,x,lp;
 
-    ivmat A = ivmatAssign(2, 2, boundsToInterval(1, 2));
+    ivmat A = ivmatAssign(2, 2, bounds(1, 2));
     A[1][1];
     A[1][2];
 }
@@ -609,7 +609,7 @@ example
     echo = 2;
     ring R = 0,x,lp;
     ivmat A = ivmatInit(2,2);                       A;
-    A = ivmatSet(A, 1, 2, boundsToInterval(1, 2));  A;
+    A = ivmatSet(A, 1, 2, bounds(1, 2));  A;
 }
 
 proc diagMatrix(int n, interval I)
@@ -627,7 +627,7 @@ example
 {
     echo = 2;
     ring R = 0,x,lp;
-    ivmat A = diagMatrix(2, boundsToInterval(1, 2)); A;
+    ivmat A = diagMatrix(2, bounds(1, 2)); A;
 }
 
 proc unitMatrix(int n)
@@ -667,10 +667,10 @@ example
     ivmat E = unitMatrix(3); E;
     det(E);
 
-    E = diagMatrix(3, boundsToInterval(2, 5/2)); E;
+    E = diagMatrix(3, bounds(2, 5/2)); E;
     det(E);
 
-    interval I = boundsToInterval(1/3, 4/3);
+    interval I = bounds(1/3, 4/3);
     ivmat A = ivmatAssign(2, 2, I, I+1, I+2, I^2); A;
     det(A);
 }
@@ -698,8 +698,8 @@ example
     echo = 2;
     ring R = 0,x,lp;
 
-    interval I = boundsToInterval(1, 2);
-    interval J = boundsToInterval(2, 5/2);
+    interval I = bounds(1, 2);
+    interval J = bounds(2, 5/2);
     interval z = 0;
 
     ivmat A = ivmatAssign(2,2,I,z,z,J); A;
@@ -729,8 +729,8 @@ example
     echo = 2;
     ring R = 0,x,lp;
 
-    interval I = boundsToInterval(1, 2);
-    interval J = boundsToInterval(2, 5/2);
+    interval I = bounds(1, 2);
+    interval J = bounds(2, 5/2);
     interval z = 0;
 
     ivmat A = ivmatAssign(2,2,I,z,z,J); A;
@@ -762,9 +762,9 @@ example
     echo = 2;
     ring R = 0,x,lp;
 
-    interval I = boundsToInterval(1/3, 7/4);
+    interval I = bounds(1/3, 7/4);
     ivmat M = diagMatrix(3, I);
-    M = ivmatSet(M, 3, 2, boundsToInterval(1, 3/2)); M;
+    M = ivmatSet(M, 3, 2, bounds(1, 3/2)); M;
 
     ivmatCenter(M);
 }
@@ -793,9 +793,9 @@ example
     echo = 2;
     ring R = 0,x,lp;
 
-    interval I = boundsToInterval(1/3, 7/4);
+    interval I = bounds(1/3, 7/4);
     ivmat M = diagMatrix(3, I);
-    M = ivmatSet(M, 3, 2, boundsToInterval(1, 3/2)); M;
+    M = ivmatSet(M, 3, 2, bounds(1, 3/2)); M;
 
     ivmatRadius(M);
 }
@@ -832,15 +832,15 @@ example
     echo = 2;
     ring R = 0,x,lp;
 
-    interval I = boundsToInterval(0, 1);
+    interval I = bounds(0, 1);
     ivmat E = ivmatInit(3,3);
     for (int i = 1; i<=3; i++) { E = ivmatSet(E, i, i, I+i); } E;
 
     interval z = 0;
-    interval J1 = boundsToInterval(1/3, 3/7);
-    interval J2 = boundsToInterval(2, 5/2);
-    interval J3 = boundsToInterval(6/7, 8/7);
-    interval J4 = boundsToInterval(1, 2);
+    interval J1 = bounds(1/3, 3/7);
+    interval J2 = bounds(2, 5/2);
+    interval J3 = bounds(6/7, 8/7);
+    interval J4 = bounds(1, 2);
 
     ivmat A = ivmatAssign(3,3, J1, z, J2, J3, J3^2, z, z, J4, J2*J4); A;
 
@@ -893,14 +893,14 @@ example
 {
     echo = 2;
     ring R = 0,x,lp;
-    interval I1 = boundsToInterval(0, 1); I1;
+    interval I1 = bounds(0, 1); I1;
 
     poly f = x3 + 4x + 3;
 
     evalPolyAtInterval(f, list(I1));
 
     ring S = 0,(x,y,z),lp;
-    interval I2 = boundsToInterval(0, 1);
+    interval I2 = bounds(0, 1);
     box B = list(I2, I2, I2);
 
     poly f = xyz2 + 2x2 + (3/2)*y3x + z + 1;
@@ -933,7 +933,7 @@ example
     ring R = 0,(x,y),lp;
     ideal I = 2x2-xy+2y2-2, 2x2-3xy+3y2-2;
 
-    interval J = boundsToInterval(-1,1);
+    interval J = bounds(-1,1);
     evalJacobianAtBox(I, list(J,J));
 }
 
@@ -968,7 +968,7 @@ example
     ring R = 0,(x,y),lp;
     ideal I = 2x2-xy+2y2-2, 2x2-3xy+3y2-2;
 
-    interval unit = boundsToInterval(0, 1);
+    interval unit = bounds(0, 1);
     // there may be common zeros in [0,1]x[0,1]
     testPolyBox(I, list(unit, unit));
 
@@ -993,8 +993,8 @@ example
 {
     echo = 2;
     ring R = 0,(x,y),lp;
-    interval I1 = boundsToInterval(0, 1); I1;
-    interval I2 = boundsToInterval(0, 1); I2;
+    interval I1 = bounds(0, 1); I1;
+    interval I2 = bounds(0, 1); I2;
 
     poly f = xy2 + 2x2 + (3/2)*y3x  + 1;
     poly g = 3x2 + 2y;
@@ -1055,7 +1055,7 @@ example
     ring R = 0,(x,y),lp;
     ideal I = 2x2-xy+2y2-2,2x2-3xy+3y2-2;  // V(I) has four elements
 
-    interval i = boundsToInterval(-3/2,3/2);
+    interval i = bounds(-3/2,3/2);
     box B = list(i, i);
 
     list result = simpleExclusionTest(I, B, 1/128);
