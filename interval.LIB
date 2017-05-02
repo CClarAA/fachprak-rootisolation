@@ -471,8 +471,9 @@ example
 // MATRIX FUNCTIONS
 
 proc ivmatInit(numrows, numcols)
-"USAGE:
-RETURN:"
+"USAGE: ivmatInit(m, n) m, n int
+RETURN: mxn matrix of [0,0]-intervals
+EXAMPLE: initialises an interval matrix"
 {
     ivmat A;
     A.rows = list();
@@ -488,24 +489,50 @@ RETURN:"
 
     return(A);
 }
+example
+{
+    echo = 2;
+    ring R = 0,x(1..5),lp;
+
+    ivmat A = ivmatInit(4, 5); A;
+}
 
 proc ivmatNrows(ivmat M)
-"USAGE:
-RETURN:"
+"USAGE: nrows(M), M ivmat
+RETURN: number of rows of M
+EXAMPLE: calculate number of rows"
 {
     return(size(M.rows));
 }
+example
+{
+    echo = 2;
+    ring R = 0,x,lp;
+
+    ivmat A = ivmatInit(2,3);
+    nrows(A);
+}
 
 proc ivmatNcols(ivmat M)
-"USAGE:
-RETURN:"
+"USAGE: ncols(M), M ivmat
+RETURN: number of columns of M
+EXAMPLE: calculate number of columns"
 {
     return(size(M.rows[1]));
 }
+example
+{
+    echo = 2;
+    ring R = 0,x,lp;
+
+    ivmat A = ivmatInit(2,3);
+    ncols(A);
+}
 
 proc ivmatAssign(int m, int n, list #)
-"USAGE:
-RETURN:"
+"USAGE: ivmatAssign(m, n, L), m, n int, L list of intervals
+RETURN: interval matrix containing intervals L in row major order
+EXAMPLE: builds matrix from intervals"
 {
     list intervals;
     if (size(#) == 1 && typeof(#[1]) == "list") { intervals = #[1]; }
@@ -527,32 +554,68 @@ RETURN:"
 
     return(A);
 }
+example
+{
+    echo = 2;
+    ring R = 0,(x,y),lp;
+
+    interval I = boundsToInterval(1, 2);
+    ivmat A = ivmatAssign(2, 2, I, I^2, I/I, -I);
+    A;
+}
 
 proc ivmatPrint(ivmat A)
-"USAGE:
-RETURN:"
+"USAGE: A; A ivmat
+RETURN: nothing
+EXAMPLE: prints a matrix"
 {
-    A.rows;
+    int m = nrows(A);
+    for (int i = 1; i <= m; i++) {
+        string(A.rows[i]);
+    }
+}
+example
+{
+    example ivmatAssign;
 }
 
 proc ivmatGet(ivmat A, int i)
-"USAGE:
-RETURN:"
+"USAGE: A[i], A ivmat, i int
+RETURN: list A[i] of i-th row of A
+EXAMPLE: get single interals of matrix"
 {
     return(A.rows[i]);
 }
+example
+{
+    echo = 2;
+    ring R = 0,x,lp;
+
+    ivmat A = ivmatAssign(2, 2, boundsToInterval(1, 2));
+    A[1][1];
+    A[1][2];
+}
 
 proc ivmatSet(ivmat A, int i, int j, interval I)
-"USAGE:
-RETURN:"
+"USAGE: ivmatSet(A, i, j, I), A ivmat, i, j, int, I interval
+RETURN: ivmat A where A[i][j] == I
+EXAMPLE: assign values of A"
 {
     A.rows[i][j] = I;
     return(A);
 }
+example
+{
+    echo = 2;
+    ring R = 0,x,lp;
+    ivmat A = ivmatInit(2,2);                       A;
+    A = ivmatSet(A, 1, 2, boundsToInterval(1, 2));  A;
+}
 
 proc diagMatrix(int n, interval I)
-"USAGE:
-RETURN:"
+"USAGE: diagMatrix(n, I), n int, I interval
+RETURN: diagonal nxn-matrix E where E[i][i] == I for all 1 <= i <= n
+EXAMPLE: create diagonal matrix"
 {
     ivmat E = ivmatInit(n, n);
     for (int i = 1; i <= n; i++) {
@@ -560,18 +623,32 @@ RETURN:"
     }
     return(E);
 }
+example
+{
+    echo = 2;
+    ring R = 0,x,lp;
+    ivmat A = diagMatrix(2, boundsToInterval(1, 2)); A;
+}
 
 proc unitMatrix(int n)
-"USAGE:
-RETURN:"
+"USAGE: unitMatrix(n)
+RETURN: nxn unit matrix
+EXAMPLE: create unit matrix"
 {
     return(diagMatrix(n, 1));
 }
+example
+{
+    echo = 2;
+    ring R = 0,x,lp;
+
+    ivmat E = unitMatrix(4); E;
+}
 
 proc determinant(ivmat A)
-"USAGE:
-RETURN:
-EXAMPLE:"
+"USAGE: det(A), A ivmat
+RETURN: determinant calculated by standard interval arithmetic
+EXAMPLE: calculates a determinant"
 {
     int n = ncols(A);
     if (n == 1) { return(A[1][1]); }
@@ -587,13 +664,21 @@ example
     echo = 2;
     ring R = 0,x,lp;
 
-    ivmat E = unitMatrix(3);
+    ivmat E = unitMatrix(3); E;
     det(E);
+
+    E = diagMatrix(3, boundsToInterval(2, 5/2)); E;
+    det(E);
+
+    interval I = boundsToInterval(1/3, 4/3);
+    ivmat A = ivmatAssign(2, 2, I, I+1, I+2, I^2); A;
+    det(A);
 }
 
 proc cofactor(ivmat A, int i, int j)
-"USAGE:
-RETURN:"
+"USAGE: cofactor(A, i, j), A ivmat, i, j int
+RETURN: cofactor of A at position (i,j)
+EXAMPLE: compute cofactors"
 {
     int n = ncols(A);
     if (n == 1) { return(A[1][1]); }
@@ -608,10 +693,24 @@ RETURN:"
 
     return( (-1)^(i+j) * det(M) );
 }
+example
+{
+    echo = 2;
+    ring R = 0,x,lp;
+
+    interval I = boundsToInterval(1, 2);
+    interval J = boundsToInterval(2, 5/2);
+    interval z = 0;
+
+    ivmat A = ivmatAssign(2,2,I,z,z,J); A;
+
+    cofactor(A, 2, 1);
+}
 
 proc adjunct(ivmat A)
-"USAGE:
-RETURN:"
+"USAGE: adjuct(A), A ivmat
+RETURN: adjuct matrix i.e. transpose cofactor matrix
+EXAMPLE: compute adjunct matrix"
 {
     int n = size(A[1]);
     ivmat adj = ivmatInit(n, n);
@@ -625,10 +724,24 @@ RETURN:"
 
     return(adj);
 }
+example
+{
+    echo = 2;
+    ring R = 0,x,lp;
+
+    interval I = boundsToInterval(1, 2);
+    interval J = boundsToInterval(2, 5/2);
+    interval z = 0;
+
+    ivmat A = ivmatAssign(2,2,I,z,z,J); A;
+
+    adjunct(A);
+}
 
 proc ivmatCenter(ivmat M)
-"USAGE:
-RETURN:"
+"USAGE: ivmatCenter(M), M ivmat
+RETURN: martix containing center elements of M
+EXAMPLE: compute center matrix"
 {
     int m = nrows(M);
     int n = ncols(M);
@@ -644,10 +757,22 @@ RETURN:"
 
     return(C);
 }
+example
+{
+    echo = 2;
+    ring R = 0,x,lp;
+
+    interval I = boundsToInterval(1/3, 7/4);
+    ivmat M = diagMatrix(3, I);
+    M = ivmatSet(M, 3, 2, boundsToInterval(1, 3/2)); M;
+
+    ivmatCenter(M);
+}
 
 proc ivmatRadius(ivmat M)
-"USAGE:
-RETURN:"
+"USAGE: ivmatRadius(M), M ivmat
+RETURN: martix containing radius elements of M
+EXAMPLE: compute radius matrix"
 {
     int m = nrows(M);
     int n = ncols(M);
@@ -663,14 +788,28 @@ RETURN:"
 
     return(C);
 }
+example
+{
+    echo = 2;
+    ring R = 0,x,lp;
+
+    interval I = boundsToInterval(1/3, 7/4);
+    ivmat M = diagMatrix(3, I);
+    M = ivmatSet(M, 3, 2, boundsToInterval(1, 3/2)); M;
+
+    ivmatRadius(M);
+}
 
 proc ivmatMultiply(ivmat A, ivmat B)
-"USAGE:
-RETURN:"
+"USAGE: A*B, A, B ivmat
+RETURN: matrix product of A and B
+EXAMPLE: multiply matrices"
 {
-    int m = size(A.rows);
-    int n = size(B[1]);
-    int p = size(A[1]);
+    int m = nrows(A);
+    int n = ncols(B);
+    int p = ncols(A);
+
+    if (p <> nrows(B)) { ERROR("Matrices have wrong dimensions!"); }
 
     ivmat C = ivmatInit(m, n);
     int i, j, k;
@@ -687,6 +826,29 @@ RETURN:"
     }
 
     return(C);
+}
+example
+{
+    echo = 2;
+    ring R = 0,x,lp;
+
+    interval I = boundsToInterval(0, 1);
+    ivmat E = ivmatInit(3,3);
+    for (int i = 1; i<=3; i++) { E = ivmatSet(E, i, i, I+i); } E;
+
+    interval z = 0;
+    interval J1 = boundsToInterval(1/3, 3/7);
+    interval J2 = boundsToInterval(2, 5/2);
+    interval J3 = boundsToInterval(6/7, 8/7);
+    interval J4 = boundsToInterval(1, 2);
+
+    ivmat A = ivmatAssign(3,3, J1, z, J2, J3, J3^2, z, z, J4, J2*J4); A;
+
+    E * A;
+    A * E;
+
+    A * adjunct(A);
+    det(A);
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -747,8 +909,9 @@ example
 }
 
 proc evalJacobianAtBox(ideal I, box B)
-"USAGE:
-RETURN:"
+"USAGE: evalJacobianAtBox(I, B), I ideal B box
+RETURN: jacobian matrix of I where polynomials are evaluated at the given box
+EXAMPLE: evalate Jacobian at box"
 {
     matrix J = jacob(I);
     int m = nrows(J);
@@ -763,6 +926,15 @@ RETURN:"
         }
     }
     return(M);
+}
+example
+{
+    echo = 2;
+    ring R = 0,(x,y),lp;
+    ideal I = 2x2-xy+2y2-2, 2x2-3xy+3y2-2;
+
+    interval J = boundsToInterval(-1,1);
+    evalJacobianAtBox(I, list(J,J));
 }
 
 proc testPolyBox(ideal I, box B)
@@ -828,7 +1000,7 @@ EXAMPLE: evalIdealAtBox"
     for (int j=1; j<= size(I);j++) {
         resu[j]=evalPolyAtInterval(I[j], intervals);
     }
-    return(resu);
+    return(box(resu));
 }
 example
 {

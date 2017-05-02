@@ -11,13 +11,32 @@ example intervalSubtract;
 example intervalMultiply;
 example intervalDivide;
 example intervalPotentiate;
+
 example boxAssign;
 example boxSet;
 example boxPrint;
 example boxGet;
 example lengthBox;
 example splitBox;
+
+example ivmatInit;
+example ivmatNrows;
+example ivmatNcols;
+example ivmatAssign;
+example ivmatPrint;
+example ivmatGet;
+example ivmatSet;
+example diagMatrix;
+example unitMatrix;
+example determinant;
+example cofactor;
+example adjunct;
+example ivmatCenter;
+example ivmatRadius;
+example ivmatMultiply;
+
 example evalPolyAtInterval;
+example evalJacobianAtBox;
 example testPolyBox;
 example evalIdealAtBox;
 example simpleExclusionTest;
