@@ -6,6 +6,7 @@ AUTHORS:    Dominik Bendle
             Clara Petroll
 
 OVERLOADS:
+// intervals
 [           intervalGet         indexing
 =           intervalAssign      assigning
 print       intervalPrint       pretty print
@@ -16,9 +17,26 @@ print       intervalPrint       pretty print
 /           intervalDivide      division
 ^           intervalPotentiate  potentiation
 
+// boxes
+=           boxSet              assigning
+[           boxGet              indexing
+print       boxPrint            printing
+
+// intervalmatrices
+[           ivmatGet            indexing
+print       ivmatPrint          printing
+nrows       ivmatNrows          number of rows
+ncols       ivmatNcols          number of columns
+det         determinant         determinant
+*           ivmatMultiply       matrix multiplication
+
 PROCEDURES:
 length                  length/size if interval
 boundsToInterval        construct interval for given bounds.
+
+intervalmatrixInit      initialises an interval matrix
+unitMatrix              unit matrix
+
 evalPolyAtInterval      evaluate interval extension of polynomial
 simpleExclusionTest     first version of our exclusion test
 ";
@@ -27,7 +45,6 @@ simpleExclusionTest     first version of our exclusion test
 static proc mod_init()
 {
     newstruct("interval", "list l");
-
     system("install", "interval", "[",      intervalGet,        2);
     system("install", "interval", "=",      intervalAssign,     1);
     system("install", "interval", "string", intervalString,     1);
@@ -43,6 +60,14 @@ static proc mod_init()
     system("install", "box", "=",     boxAssign, 1);
     system("install", "box", "[",     boxGet,    2);
     system("install", "box", "print", boxPrint,  1);
+
+    newstruct("ivmat", "list rows");
+    system("install", "ivmat", "print", ivmatPrint, 1);
+    system("install", "ivmat", "[",     ivmatGet, 2);
+    system("install", "ivmat", "nrows", ivmatNrows, 1);
+    system("install", "ivmat", "ncols", ivmatNcols, 1);
+    system("install", "ivmat", "det",   determinant, 1);
+    system("install", "ivmat", "*",     ivmatMultiply, 2);
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -443,6 +468,229 @@ example
 
 ///////////////////////////////////////////////////////////////////
 
+// MATRIX FUNCTIONS
+
+proc ivmatInit(numrows, numcols)
+"USAGE:
+RETURN:"
+{
+    ivmat A;
+    A.rows = list();
+    int i, j;
+    interval z = 0;
+
+    for (i = 1; i <= numrows; i++) {
+        A.rows[i] = list();
+        for (j=1; j <= numcols; j++) {
+            A.rows[i][j] = z;
+        }
+    }
+
+    return(A);
+}
+
+proc ivmatNrows(ivmat M)
+"USAGE:
+RETURN:"
+{
+    return(size(M.rows));
+}
+
+proc ivmatNcols(ivmat M)
+"USAGE:
+RETURN:"
+{
+    return(size(M.rows[1]));
+}
+
+proc ivmatAssign(int m, int n, list #)
+"USAGE:
+RETURN:"
+{
+    list intervals;
+    if (size(#) == 1 && typeof(#[1]) == "list") { intervals = #[1]; }
+    else                                        { intervals = #;    }
+
+    int ivsize = size(intervals);
+    int i, j;
+    int counter = 1;
+    ivmat A = ivmatInit(m, n);
+
+    for (i = 1; i <= m; i++) {
+        for (j = 1; j <= n; j++) {
+            if (counter <= ivsize) {
+                A = ivmatSet(A, i, j, intervals[counter]);
+                counter++;
+            }
+        }
+    }
+
+    return(A);
+}
+
+proc ivmatPrint(ivmat A)
+"USAGE:
+RETURN:"
+{
+    A.rows;
+}
+
+proc ivmatGet(ivmat A, int i)
+"USAGE:
+RETURN:"
+{
+    return(A.rows[i]);
+}
+
+proc ivmatSet(ivmat A, int i, int j, interval I)
+"USAGE:
+RETURN:"
+{
+    A.rows[i][j] = I;
+    return(A);
+}
+
+proc diagMatrix(int n, interval I)
+"USAGE:
+RETURN:"
+{
+    ivmat E = ivmatInit(n, n);
+    for (int i = 1; i <= n; i++) {
+        E = ivmatSet(E, i, i, I);
+    }
+    return(E);
+}
+
+proc unitMatrix(int n)
+"USAGE:
+RETURN:"
+{
+    return(diagMatrix(n, 1));
+}
+
+proc determinant(ivmat A)
+"USAGE:
+RETURN:
+EXAMPLE:"
+{
+    int n = ncols(A);
+    if (n == 1) { return(A[1][1]); }
+
+    interval I = 0;
+    for (int i = 1; i <= n; i++) {
+        I = I + A[1][i] * cofactor(A, 1, i);
+    }
+    return(I);
+}
+example
+{
+    echo = 2;
+    ring R = 0,x,lp;
+
+    ivmat E = unitMatrix(3);
+    det(E);
+}
+
+proc cofactor(ivmat A, int i, int j)
+"USAGE:
+RETURN:"
+{
+    int n = ncols(A);
+    if (n == 1) { return(A[1][1]); }
+
+    ivmat M = ivmatInit(n-1, n-1);
+    int k, l;
+    for (k = 1; k < n; k++) {
+        for (l = 1; l < n; l++) {
+            M = ivmatSet(M, k, l, A[k + (k>=i)][l + (l>=j)]);
+        }
+    }
+
+    return( (-1)^(i+j) * det(M) );
+}
+
+proc adjunct(ivmat A)
+"USAGE:
+RETURN:"
+{
+    int n = size(A[1]);
+    ivmat adj = ivmatInit(n, n);
+
+    int i, j;
+    for (i = 1; i <= n; i++) {
+        for (j = 1; j <= n; j++) {
+            adj = ivmatSet(adj, i, j, cofactor(A, j, i));
+        }
+    }
+
+    return(adj);
+}
+
+proc ivmatCenter(ivmat M)
+"USAGE:
+RETURN:"
+{
+    int m = nrows(M);
+    int n = ncols(M);
+
+    matrix C[m][n];
+    int i, j;
+
+    for (i = 1; i <= m; i++) {
+        for (j = 1; j <= n; j++) {
+            C[i, j] = (M[i][j][1] + M[i][j][2])/2;
+        }
+    }
+
+    return(C);
+}
+
+proc ivmatRadius(ivmat M)
+"USAGE:
+RETURN:"
+{
+    int m = nrows(M);
+    int n = ncols(M);
+
+    matrix C[m][n];
+    int i, j;
+
+    for (i = 1; i <= m; i++) {
+        for (j = 1; j <= n; j++) {
+            C[i, j] = length(M[i][j])/2;
+        }
+    }
+
+    return(C);
+}
+
+proc ivmatMultiply(ivmat A, ivmat B)
+"USAGE:
+RETURN:"
+{
+    int m = size(A.rows);
+    int n = size(B[1]);
+    int p = size(A[1]);
+
+    ivmat C = ivmatInit(m, n);
+    int i, j, k;
+    interval I;
+
+    for (i = 1; i <= m; i++) {
+        for (j = 1; j <= n; j++) {
+            I = 0;
+            for (k = 1; k <= p; k++) {
+                I = I + A[i][k] * B[k][j];
+            }
+            C = ivmatSet(C, i, j, I);
+        }
+    }
+
+    return(C);
+}
+
+///////////////////////////////////////////////////////////////////
+
 // POLYNOMIAL APPLICATIONS
 
 // naive (?) implementation
@@ -496,6 +744,25 @@ example
     poly f = xyz2 + 2x2 + (3/2)*y3x + z + 1;
 
     evalPolyAtInterval(f, B);
+}
+
+proc evalJacobianAtBox(ideal I, box B)
+"USAGE:
+RETURN:"
+{
+    matrix J = jacob(I);
+    int m = nrows(J);
+    int n = ncols(J);
+    ivmat M = ivmatInit(m, n);
+
+    int i, j;
+
+    for (i = 1; i <= m; i++) {
+        for (j = 1; j <=n ; j++) {
+            M = ivmatSet(M, i, j, evalPolyAtInterval(J[i,j], B));
+        }
+    }
+    return(M);
 }
 
 proc testPolyBox(ideal I, box B)
