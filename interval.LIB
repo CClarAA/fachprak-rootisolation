@@ -9,6 +9,7 @@ OVERLOADS:
 // intervals
 [           intervalGet         indexing
 =           intervalAssign      assigning
+==          intervalEqual       equality
 print       intervalPrint       pretty print
 +           intervalAdd         addition
 -           intervalNegate      negation (unary)
@@ -49,6 +50,7 @@ static proc mod_init()
     newstruct("interval", "list l");
     system("install", "interval", "[",      intervalGet,        2);
     system("install", "interval", "=",      intervalAssign,     1);
+    system("install", "interval", "==",     intervalEqual,      2);
     system("install", "interval", "string", intervalString,     1);
     system("install", "interval", "print",  intervalPrint,      1);
     system("install", "interval", "+",      intervalAdd,        2);
@@ -61,6 +63,7 @@ static proc mod_init()
     newstruct("box", "list intervals");
     system("install", "box", "=",           boxAssign,      1);
     system("install", "box", "[",           boxGet,         2);
+    system("install", "box", "==",          boxEqual,       2);
     system("install", "box", "print",       boxPrint,       1);
     system("install", "box", "intersect",   boxIntersect,   4);
 
@@ -130,6 +133,26 @@ example
 
     I[1];
     I[2];
+}
+
+proc intervalEqual(interval I, interval J)
+"USAGE: I == J, I, J interval
+RETURN: 1 if bounds are equal, 0 else
+EXAMPLE: test intervals for equality"
+{
+    return(I[1] == J[1] && I[2] == J[2]);
+}
+example
+{
+    echo = 2;
+    ring R = 0,x,lp;
+
+    interval I = bounds(0, 1);
+    interval J = bounds(0, 1);
+    interval K = bounds(0, 2);
+
+    I == J;
+    I == K;
 }
 
 proc length(interval I)
@@ -409,6 +432,32 @@ example
 
     B;
     B[3];
+}
+
+proc boxEqual(box B, box C)
+"USAGE: B == C, B, C box
+RETURN: 1 if all bounds are equal, 0 else
+EXAMPLE: test boxes for equality"
+{
+    int n = nvars(basering);
+    for (int i = 1; i <= n; i++) {
+        if (!(B[i] == C[i])) { return(0); }
+    }
+    return(1);
+}
+example
+{
+    echo = 2;
+    ring R = 0,x,lp;
+
+    interval I = bounds(0,1);
+    interval J = bounds(1,2);
+    box B = list(I, J);
+    box C = list(J, I);
+    box D = list(I, J);
+
+    B == C;
+    B == D;
 }
 
 proc lengthBox(box B)

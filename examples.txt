@@ -2,6 +2,7 @@ LIB "interval.LIB";
 
 example intervalAssign;
 example intervalGet;
+example intervalEqual;
 example length;
 example intervalString;
 example intervalPrint;
@@ -16,8 +17,10 @@ example boxAssign;
 example boxSet;
 example boxPrint;
 example boxGet;
+example boxEqual;
 example lengthBox;
 example splitBox;
+example boxIntersect;
 
 example ivmatInit;
 example ivmatNrows;
