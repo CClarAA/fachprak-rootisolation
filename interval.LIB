@@ -21,7 +21,9 @@ print       intervalPrint       pretty print
 // boxes
 =           boxSet              assigning
 [           boxGet              indexing
+==          boxEqual            equality
 print       boxPrint            printing
+-           boxSubtract         subraction
 intersect   boxIntersect        intersection
 
 // intervalmatrices
@@ -65,6 +67,7 @@ static proc mod_init()
     system("install", "box", "[",           boxGet,         2);
     system("install", "box", "==",          boxEqual,       2);
     system("install", "box", "print",       boxPrint,       1);
+    system("install", "box", "-",           boxSubtract,    2);
     system("install", "box", "intersect",   boxIntersect,   4);
 
     newstruct("ivmat", "list rows");
@@ -458,6 +461,16 @@ example
 
     B == C;
     B == D;
+}
+
+proc boxSubtract(box B, box C)
+"USAGE: B-C, B, C box
+RETURN: componentwise subtraction"
+{
+    int n = nvars(basering);
+    box OUT;
+    for (int i = 1; i <= n; i++) { OUT.intervals[i] = C[i] - B[i]; };
+    return(OUT);
 }
 
 proc lengthBox(box B)
