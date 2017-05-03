@@ -312,7 +312,7 @@ proc intervalPotentiate(interval I, int n)
 RETURN: I^n with stricter bounds than naive multiplication
 EXAMPLE: potentiates an interval"
 {
-    if (n % 2 == 1 || I[1]*I[2] >= 0) {
+    if (n % 2 == 1 || I[1]*I[2] >= 0 || n == 0) {
         return(bounds(I[1]^n, I[2]^n));
     } else {
         return(bounds(0, max(I[1]^n, I[2]^n)));
