@@ -548,7 +548,7 @@ EXAMPLE: intersect boxes"
         }
     }
 
-    list result;
+    box OUT;
     number lower, upper;
 
     for (i = 1; i <= n; i++) {
@@ -561,10 +561,10 @@ EXAMPLE: intersect boxes"
 
         if (upper < lower) { return(-1); }
 
-        result[i] = bounds(lower, upper);
+        OUT.intervals[i] = bounds(lower, upper);
     }
 
-    return(box(result));
+    return(OUT);
 }
 example
 {
