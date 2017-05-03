@@ -662,7 +662,7 @@ EXAMPLE: builds matrix from intervals"
     for (i = 1; i <= m; i++) {
         for (j = 1; j <= n; j++) {
             if (counter <= ivsize) {
-                A = ivmatSet(A, i, j, intervals[counter]);
+                A.rows[i][j] = intervals[counter];
                 counter++;
             }
         }
@@ -724,7 +724,7 @@ example
 {
     echo = 2;
     ring R = 0,x,lp;
-    ivmat A = ivmatInit(2,2);                       A;
+    ivmat A = ivmatInit(2,2);             A;
     A = ivmatSet(A, 1, 2, bounds(1, 2));  A;
 }
 
@@ -735,7 +735,7 @@ EXAMPLE: create diagonal matrix"
 {
     ivmat E = ivmatInit(n, n);
     for (int i = 1; i <= n; i++) {
-        E = ivmatSet(E, i, i, I);
+        E.rows[i][i] = I;
     }
     return(E);
 }
@@ -800,10 +800,12 @@ EXAMPLE: compute cofactors"
     if (n == 1) { return(A[1][1]); }
 
     ivmat M = ivmatInit(n-1, n-1);
+
+    // create m-1 x n-1 submatrix (minor) without row i, column j
     int k, l;
     for (k = 1; k < n; k++) {
         for (l = 1; l < n; l++) {
-            M = ivmatSet(M, k, l, A[k + (k>=i)][l + (l>=j)]);
+            M.rows[k][l] = A[k + (k>=i)][l + (l>=j)];
         }
     }
 
@@ -834,7 +836,7 @@ EXAMPLE: compute adjunct matrix"
     int i, j;
     for (i = 1; i <= n; i++) {
         for (j = 1; j <= n; j++) {
-            adj = ivmatSet(adj, i, j, cofactor(A, j, i));
+            adj.rows[i][j] = cofactor(A, j, i);
         }
     }
 
@@ -937,7 +939,7 @@ EXAMPLE: multiply matrices"
             for (k = 1; k <= p; k++) {
                 I = I + A[i][k] * B[k][j];
             }
-            C = ivmatSet(C, i, j, I);
+            C.rows[i][j] = I;
         }
     }
 
@@ -977,7 +979,7 @@ EXAMPLE: apply matrix to box"
     if (ncols(A) <> n || nrows(A) <> n) { ERROR("Matrix has wrong dimensions"); }
 
     int i, j;
-    list result;
+    box result;
     interval tmp;
 
     for (i = 1; i <= n; i++) {
@@ -985,10 +987,10 @@ EXAMPLE: apply matrix to box"
         for (j = 1; j <= n; j++) {
             tmp = tmp + A[i][j] * b[j];
         }
-        result[i] = tmp;
+        result.intervals[i] = tmp;
     }
 
-    return(box(result));
+    return(result);
 }
 example
 {
@@ -1074,7 +1076,7 @@ EXAMPLE: evalate Jacobian at box"
 
     for (i = 1; i <= m; i++) {
         for (j = 1; j <=n ; j++) {
-            M = ivmatSet(M, i, j, evalPolyAtInterval(J[i,j], B));
+            M.rows[i][j] = evalPolyAtInterval(J[i,j], B);
         }
     }
     return(M);
