@@ -43,7 +43,7 @@ unitMatrix              unit matrix
 applyMatrix             apply matrix to box
 
 evalPolyAtInterval      evaluate interval extension of polynomial
-simpleExclusionTest     first version of our exclusion test
+exclusionTest           first version of our exclusion test
 ";
 ///////////////////////////////////////////////////////////////////
 
@@ -1206,7 +1206,7 @@ EXAMPLE: tests the above for intersection of ellipses."
 
         def Bint = intersect(B, fB);
 
-        if (typeof(Bint) == "int") { ~; return(-1, B); }
+        if (typeof(Bint) == "int") { return(-1, B); }
         B = Bint;
 
         if (fB == B) { return(1, B) };
@@ -1261,10 +1261,10 @@ example
     evalIdealAtBox(I,intervals);
 }
 
-proc simpleExclusionTest(ideal I, box start, number limitsize)
+proc exclusionTest(ideal I, box start, number limitsize)
 "USAGE: exclusion test for roots with interval arithmetic
 RETURN: list of boxes
-EXAMPLE: simpleExclusionTest for intersection of two ellipses"
+EXAMPLE: exclusionTest for intersection of two ellipses"
 {
     //set of boxes smaller than size
     list B_size;
@@ -1287,7 +1287,7 @@ EXAMPLE: simpleExclusionTest for intersection of two ellipses"
             zeroTest, B[i] = testPolyBox(I,B[i]);
 
             // does not yet occur
-            if (zeroTest == 1) { B_star = append(B_star, B[i]); i++; continue };
+            if (zeroTest == 1) { B_star = insert(B_star, B[i]); i++; continue };
             if (zeroTest == 0) {
                 //case that box is smaller than the input limitsize
                 if (lengthBox(B[i]) <= limitsize){
@@ -1314,7 +1314,7 @@ example
     interval i = bounds(-3/2,3/2);
     box B = list(i, i);
 
-    list result = simpleExclusionTest(I, B, 1/128);
+    list result = exclusionTest(I, B, 1/64);
     result;
 }
 
