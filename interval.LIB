@@ -469,7 +469,7 @@ RETURN: componentwise subtraction"
 {
     int n = nvars(basering);
     box OUT;
-    for (int i = 1; i <= n; i++) { OUT.intervals[i] = C[i] - B[i]; };
+    for (int i = 1; i <= n; i++) { OUT.intervals[i] = B[i] - C[i]; };
     return(OUT);
 }
 
@@ -969,6 +969,82 @@ example
     det(A);
 }
 
+proc ivmatGaussian(ivmat A)
+"USAGE: ivmatGaussian(A) A ivmat
+RETURN: inverse (?) to A by Gaussian elimination
+EXAMPLE: some matrix"
+{
+    int n = nrows(A);
+    if (n <> ncols(A)) { ERROR("Matrix non-square"); }
+    interval d = det(A);
+    if (d[1]*d[2] <= 0) { ERROR("Matrix singular"); }
+
+    ivmat Ainv = unitMatrix(n);
+    list tmp;
+    interval TMP;
+
+    int i, j, pos;
+    for (pos = 1; pos <= n; pos++) {
+        i = pos;
+
+        // get non-zero interval on diagonal
+        while(A[i][pos][1] * A[i][pos][2] <= 0) {
+            i++;
+        }
+        if (i <> pos) {
+            tmp = A.rows[i];
+            A.rows[i] = A.rows[pos];
+            A.rows[pos] = tmp;
+
+            tmp = Ainv.rows[i];
+            Ainv.rows[i] = Ainv.rows[pos];
+            Ainv.rows[pos] = tmp;
+        }
+
+        // pivot (pos,pos)
+        TMP = A[pos][pos];
+        A.rows[pos][pos] = interval(1);
+
+        for (j = 1; j <= n; j++) {
+            if (pos <> j) { A.rows[pos][j] = A[pos][j]/TMP; }
+            Ainv.rows[pos][j] = Ainv[pos][j]/TMP;
+        }
+
+        // clear entries above and below
+        for (i = 1; i <= n; i++) {
+            if (i <> pos) {
+                TMP = A[i][pos];
+                A.rows[i][pos] = interval(0);
+                for (j = 1; j <= n; j++) {
+                    if (j <> pos) { A.rows[i][j] = A[i][j] - A[pos][j]*TMP; }
+                    Ainv.rows[i][j] = Ainv[i][j] - Ainv[pos][j]*TMP;
+                }
+            }
+        }
+    }
+    return(Ainv);
+}
+example
+{
+    echo = 2;
+    ring R = 0,(x,y),lp;
+
+    ideal I = 2x2-xy+2y2-2,2x2-3xy+3y2-2;
+    box B = list(bounds(7/8, 9/8), bounds(-1/10, 1/20));
+
+    ivmat J = evalJacobianAtBox (I, B); J;
+
+    ivmat Jinv = ivmatGaussian(J);
+    Jinv;
+
+    Jinv * J;
+
+    ivmat Jadj = diagMatrix(2, 1/det(J)) * adjunct(J);
+    Jadj;
+
+    Jadj * J;
+}
+
 proc applyMatrix(ivmat A, box b)
 "USAGE: applyMatrix(A, b), A ivmat, b box
 RETURN: A*b
@@ -1003,6 +1079,10 @@ example
 
     ivmat A = evalJacobianAtBox(I, B); A;
     applyMatrix(A, B);
+
+    applyMatrix(unitMatrix(3), B);
+
+    applyMatrix(diagMatrix(3, bounds(0, 1)), B);
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -1107,14 +1187,36 @@ EXAMPLE: tests the above for intersection of ellipses."
         tmp = evalPolyAtInterval(I[i], B);
         // check if 0 contained in every interval
         // return -1 if not
-        if (tmp[1]*tmp[2] > 0) { return(-1); }
+        if (tmp[1]*tmp[2] > 0) { return(-1, B); }
+    }
+
+    if (ncols(I) == numvars) {
+        box Bcenter;
+        for (i = 1; i <= numvars; i++) {
+            Bcenter.intervals[i] = interval((B[i][1] + B[i][2])/2);
+        }
+
+        ivmat J = evalJacobianAtBox(I, B);
+        interval d = det(J);
+
+        if (d[1]*d[2] <= 0) { return(0, B); }
+
+        box fB = evalIdealAtBox(I, Bcenter);
+        fB = Bcenter - applyMatrix(ivmatGaussian(J), fB);
+
+        def Bint = intersect(B, fB);
+
+        if (typeof(Bint) == "int") { ~; return(-1, B); }
+        B = Bint;
+
+        if (fB == B) { return(1, B) };
     }
 
     // TODO: implement multi-dimensional Newton method
     // returns 1
 
     // no condition could be verified
-    return(0);
+    return(0, B);
 }
 example
 {
@@ -1182,7 +1284,7 @@ EXAMPLE: simpleExclusionTest for intersection of two ellipses"
 
         for (i=1; i<=size(B); i++) {
             //case that maybe there is a root in the box
-            zeroTest = testPolyBox(I,B[i]);
+            zeroTest, B[i] = testPolyBox(I,B[i]);
 
             // does not yet occur
             if (zeroTest == 1) { B_star = append(B_star, B[i]); i++; continue };
@@ -1200,7 +1302,7 @@ EXAMPLE: simpleExclusionTest for intersection of two ellipses"
         // set B=B_prime
         B = B_prime;
     }
-    return(B_size);
+    return(B_size, B_star);
 }
 example
 {
@@ -1214,7 +1316,6 @@ example
 
     list result = simpleExclusionTest(I, B, 1/128);
     result;
-    size(result);
 }
 
 // vim: ft=singular
