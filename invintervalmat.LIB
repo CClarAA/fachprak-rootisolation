@@ -516,7 +516,7 @@ RETURN: newtonstep(f,x)"
 	ivmat invJaco=inverse_ivmat(Jaco)[2];
 	
 	//compute Newton step 
-	return(box_subtract(midbox,applyMatrix(invJaco,f_midbox)));
+	return(boxSubtract(midbox,applyMatrix(invJaco,f_midbox)));
 	
 }
 
