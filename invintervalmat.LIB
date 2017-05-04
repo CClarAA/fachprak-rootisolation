@@ -388,4 +388,76 @@ example
     print(bymatrix_mat(A_c,delta,y_4));
 }
 
+proc inverse_ivmat(ivmat A)
+"USAGE: inverse matrix for an interval matrix A or states that A singular
+RETURN: inverse of A  "
+{
+	int n=ncols(A);
+	if (ncols(A)<> nrows(A)){ERROR("Matrix has false size");}
+	matrix lowerbound[n][n];
+	matrix upperbound[n][n];
+	number maximum; number minimum;
+	matrix B_y[n][n];
+	
+	list vectors=one_vector(n);
+	list matrices;
+	
+	//compute all matrices B_y
+	for (int i=1; i<= 2^n; i++)
+		{
+		B_y=bymatrix(A,vectors[i]);
+		if (B_y==-1)   //hier noch verbessern da -1 doof...
+			{
+			ERROR("matrix A is singular");
+			}
+		matrices[i]=B_y;
+		}
+	
+	//find the lowerbound and upperbound matrices for the inverse
+	int j; int k; int t;
+	for (j=1; j<= n; j++)  //rows
+		{
+		for (k=1; k<=n; k++)  // columns
+			{
+			minimum=leadcoef(matrices[1][j,k]);
+			maximum=leadcoef(matrices[1][j,k]);
+		
+			for (t=1; t<= 2^n; t++)  // find the minium of all entries
+				{
+				minimum=min(minimum, leadcoef(matrices[t][j,k]));
+				maximum=max(maximum, leadcoef(matrices[t][j,k]));
+				}
+			upperbound[j,k]=maximum;
+			lowerbound[j,k]=minimum;
+			}
+		}
+	
+	// generate inverse interval mat 
+	ivmat inverse;
+	inverse=ivmatInit(n,n);
+	for (j=1; j<= n; j++)
+		{
+		for (k=1; k<=n; k++)
+			{
+			inverse = ivmatSet(inverse, j, k, bounds(leadcoef(upperbound[j,k]),leadcoef(lowerbound[j,k])));  
+			}
+		}
+	return(inverse);
+	
+}
+
+example
+{
+    echo=2;
+    ring R=0,x,lp;
+    interval I1=bounds(1,2);
+    interval I2=0;
+    interval I3=0;
+    interval I4=bounds(1,3);
+    ivmat A=ivmatAssign(2,2,I1,I2,I3,I4);
+    print(A);
+   	
+    print(inverse_ivmat(A));
+}
+
 // vim: ft=singular
