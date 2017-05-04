@@ -498,6 +498,34 @@ example
     lengthBox(B);
 }
 
+proc boxCenter(box M)
+"USAGE: boxCenter(M), M ivmat
+RETURN: matrix containing center elements of M
+EXAMPLE: compute center matrix"
+{
+    int n = nvars(basering);
+
+    matrix C[n][1];
+    int i;
+
+    for (i = 1; i <= n; i++) {
+        C[i,1]=(M[i][1]+M[i][2])/2;
+    }
+
+    return(C);
+}
+example
+{
+    echo = 2;
+    ring R = 0,(x,y),lp;
+    interval I1 = bounds(1/3, 7/4);
+    interval I2 = bounds(0,2);
+    
+    box B= list(I1,I2);
+    
+    boxCenter(B);
+}
+
 proc splitBox(box B)
 "USAGE: splitBox(box), box list of intervals
 RETURN: new list of smaller boxes
