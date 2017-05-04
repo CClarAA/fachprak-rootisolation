@@ -37,11 +37,13 @@ example adjunct;
 example ivmatCenter;
 example ivmatRadius;
 example ivmatMultiply;
+example ivmatGaussian;
+example applyMatrix;
 
-example evalPolyAtInterval;
+example evalPolyAtBox;
 example evalJacobianAtBox;
 example testPolyBox;
 example evalIdealAtBox;
-example simpleExclusionTest;
+example exclusionTest;
 
 quit;
