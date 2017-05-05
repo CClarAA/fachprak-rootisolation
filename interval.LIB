@@ -521,9 +521,9 @@ example
     ring R = 0,(x,y),lp;
     interval I1 = bounds(1/3, 7/4);
     interval I2 = bounds(0,2);
-    
+
     box B= list(I1,I2);
-    
+
     boxCenter(B);
 }
 

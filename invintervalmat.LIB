@@ -251,11 +251,11 @@ proc bymatrix(ivmat A, matrix y)
 "USAGE: matrix B_y for given vector y (+/-1-vector)
 RETURN: bymatrix(A,y) "
 {
-	if (ncols(A)<> nrows(A)){ERROR("interval matrix has wrong size");}
-	//center matrix of A
-	matrix A_c=ivmatCenter(A);
-	matrix delta= ivmatRadius(A);
-	
+    if (ncols(A)<> nrows(A)){ERROR("interval matrix has wrong size");}
+    //center matrix of A
+    matrix A_c=ivmatCenter(A);
+    matrix delta= ivmatRadius(A);
+
     //if (ncols(A_c)!=nrows(A_c)){ERROR("matrix has wrong size");}
     //if (ncols(A_c)!=nrows(y)){ERROR("matrix and vector not compatible");}
     //if (ncols(delta)!=nrows(delta) || ncols(delta)!= ncols(A_c)){ERROR("matrix A_c and delta are not compatible");}
@@ -305,7 +305,7 @@ example
     interval I4=bounds(1,3);
     ivmat A=ivmatAssign(2,2,I1,I2,I3,I4);
     print(A);
-   	
+
     matrix y_1[2][1]=1,1;
     matrix y_2[2][1]=1,-1;
     matrix y_3[2][1]=-1,1;
@@ -321,7 +321,7 @@ proc bymatrix_mat(matrix A_c, matrix delta, matrix y)
 "USAGE: matrix B_y for given vector y (+/-1-vector)
 RETURN: bymatrix(A,y) "
 {
-	
+
     if (ncols(A_c)!=nrows(A_c)){ERROR("matrix has wrong size");}
     if (ncols(A_c)!=nrows(y)){ERROR("matrix and vector not compatible");}
     if (ncols(delta)!=nrows(delta) || ncols(delta)!= ncols(A_c)){ERROR("matrix A_c and delta are not compatible");}
@@ -394,61 +394,61 @@ proc inverse_ivmat(ivmat A)
 "USAGE: inverse matrix for an interval matrix A or states that A singular (output list(1, inverse) or list(-1))
 RETURN: inverse of A  "
 {
-	int n=ncols(A);
-	if (ncols(A)<> nrows(A)){ERROR("Matrix has false size");}
-	matrix lowerbound[n][n];
-	matrix upperbound[n][n];
-	number maximum; number minimum;
-	matrix B_y[n][n];
-	
-	list vectors=one_vector(n);
-	list matrices;
-	
-	//compute all matrices B_y
-	for (int i=1; i<= 2^n; i++)
-		{
-		if (bymatrix(A,vectors[i])==-1)
-			{
-			return(list(-1));
-			//ERROR("matrix A is singular");
-			}
-		
-		B_y=bymatrix(A,vectors[i]);
-		
-		matrices[i]=B_y;
-		}
-	
-	//find the lowerbound and upperbound matrices for the inverse
-	int j; int k; int t;
-	for (j=1; j<= n; j++)  //rows
-		{
-		for (k=1; k<=n; k++)  // columns
-			{
-			minimum=leadcoef(matrices[1][j,k]);
-			maximum=leadcoef(matrices[1][j,k]);
-		
-			for (t=1; t<= 2^n; t++)  // find the minium of all entries
-				{
-				minimum=min(minimum, leadcoef(matrices[t][j,k]));
-				maximum=max(maximum, leadcoef(matrices[t][j,k]));
-				}
-			upperbound[j,k]=maximum;
-			lowerbound[j,k]=minimum;
-			}
-		}
-	
-	// generate inverse interval mat 
-	ivmat inverse;
-	inverse=ivmatInit(n,n);
-	for (j=1; j<= n; j++)
-		{
-		for (k=1; k<=n; k++)
-			{
-			inverse = ivmatSet(inverse, j, k, bounds(leadcoef(upperbound[j,k]),leadcoef(lowerbound[j,k])));  
-			}
-		}
-	return(list(1,inverse));
-	
+    int n=ncols(A);
+    if (ncols(A)<> nrows(A)){ERROR("Matrix has false size");}
+    matrix lowerbound[n][n];
+    matrix upperbound[n][n];
+    number maximum; number minimum;
+    matrix B_y[n][n];
+
+    list vectors=one_vector(n);
+    list matrices;
+
+    //compute all matrices B_y
+    for (int i=1; i<= 2^n; i++)
+    {
+        if (bymatrix(A,vectors[i])==-1)
+        {
+            return(list(-1));
+            //ERROR("matrix A is singular");
+        }
+
+        B_y=bymatrix(A,vectors[i]);
+
+        matrices[i]=B_y;
+    }
+
+    //find the lowerbound and upperbound matrices for the inverse
+    int j; int k; int t;
+    for (j=1; j<= n; j++)  //rows
+    {
+        for (k=1; k<=n; k++)  // columns
+        {
+            minimum=leadcoef(matrices[1][j,k]);
+            maximum=leadcoef(matrices[1][j,k]);
+
+            for (t=1; t<= 2^n; t++)  // find the minium of all entries
+            {
+                minimum=min(minimum, leadcoef(matrices[t][j,k]));
+                maximum=max(maximum, leadcoef(matrices[t][j,k]));
+            }
+            upperbound[j,k]=maximum;
+            lowerbound[j,k]=minimum;
+        }
+    }
+
+    // generate inverse interval mat
+    ivmat inverse;
+    inverse=ivmatInit(n,n);
+    for (j=1; j<= n; j++)
+    {
+        for (k=1; k<=n; k++)
+        {
+            inverse = ivmatSet(inverse, j, k, bounds(leadcoef(upperbound[j,k]),leadcoef(lowerbound[j,k])));
+        }
+    }
+    return(list(1,inverse));
+
 }
 
 example
@@ -461,8 +461,8 @@ example
     interval I4=bounds(1,3);
     ivmat A=ivmatAssign(2,2,I1,I2,I3,I4);
     print(A);
-   	
-   	inverse_ivmat(A);
+
+    inverse_ivmat(A);
     print(inverse_ivmat(A)[2]);
 }
 
@@ -470,96 +470,95 @@ proc newtonstep( ideal f, box x)
 "USAGE: compute newton step for poly f and box x
 RETURN: newtonstep(f,x)"
 {
-	matrix midpoint=boxCenter(x);
-	
-	//interval extension of the jacobian matrix 
-	ivmat Jaco=evalJacobianAtBox(f,x);	
-	
-	//test if Jaco is invertible 
-	if (inverse_ivmat(Jaco)[1]==-1)
-		{
-		//if singular just take x as newton step
-		return(x);
-		}
-	
-	//evtl auch besser machbar ohne substitute weil so schon ziemlich umständlich	
-	//erzeuge ideal mit den variablen des baserings um substitute anzuwenden - > variables(vb) ist ideal
-	poly vb=1; int i;
-	for (i=1; i<=nvars(basering); i++)
-		{
-		vb=vb*var(i);
-		}
-	// erzeuge ideal mit den numbers aus midpoint
-	ideal points=midpoint[1,1];
-	for (i=2; i<=nvars(basering); i++)
-		{
-		points=points,midpoint[i,1];
-		}
-	
-	ideal f_midpoint=substitute(f,variables(vb), points); 
-	
-	//convert the ideal f_midpoint into a box (damit wir dann boxapply anwenden können)
-	box f_midbox=bounds(0,0); //initialise zerobox
-	for (i=1; i<=nvars(basering); i++)
-		{
-		f_midbox=boxSet(f_midbox,i,bounds(leadcoef(f_midpoint[i]), leadcoef(f_midpoint[i])));
-		}
-	
-	//convert matrix midpoint into box
-	box midbox=list(bounds(0,0));
-	for (i=1;i<=nvars(basering); i++)
-		{
-		midbox=boxSet(midbox,i,bounds(leadcoef(midpoint[i,1]), leadcoef(midpoint[i,1])));
-		}
-	
-	box newton;
-	ivmat invJaco=inverse_ivmat(Jaco)[2];
-	
-	//compute Newton step 
-	return(boxSubtract(midbox,applyMatrix(invJaco,f_midbox)));
-	
+    matrix midpoint=boxCenter(x);
+
+    //interval extension of the jacobian matrix
+    ivmat Jaco=evalJacobianAtBox(f,x);
+
+    //test if Jaco is invertible
+    if (inverse_ivmat(Jaco)[1]==-1)
+    {
+        //if singular just take x as newton step
+        return(x);
+    }
+
+    //evtl auch besser machbar ohne substitute weil so schon ziemlich umständlich
+    //erzeuge ideal mit den variablen des baserings um substitute anzuwenden - > variables(vb) ist ideal
+    poly vb=1; int i;
+    for (i=1; i<=nvars(basering); i++)
+    {
+        vb=vb*var(i);
+    }
+    // erzeuge ideal mit den numbers aus midpoint
+    ideal points=midpoint[1,1];
+    for (i=2; i<=nvars(basering); i++)
+    {
+        points=points,midpoint[i,1];
+    }
+
+    ideal f_midpoint=substitute(f,variables(vb), points);
+
+    //convert the ideal f_midpoint into a box (damit wir dann boxapply anwenden können)
+    box f_midbox=bounds(0,0); //initialise zerobox
+    for (i=1; i<=nvars(basering); i++)
+    {
+        f_midbox=boxSet(f_midbox,i,bounds(leadcoef(f_midpoint[i]), leadcoef(f_midpoint[i])));
+    }
+
+    //convert matrix midpoint into box
+    box midbox=list(bounds(0,0));
+    for (i=1;i<=nvars(basering); i++)
+    {
+        midbox=boxSet(midbox,i,bounds(leadcoef(midpoint[i,1]), leadcoef(midpoint[i,1])));
+    }
+
+    box newton;
+    ivmat invJaco=inverse_ivmat(Jaco)[2];
+
+    //compute Newton step
+    return(boxSubtract(midbox,applyMatrix(invJaco,f_midbox)));
+
 }
 
 example
 {
-	echo = 2;
+    echo = 2;
 
     ring R = 0,(x,y),lp;
     interval I = bounds(1, 2);
     box B = list(I, I^2); B;
-    
+
     ideal f=3xy,x2+3;
-    
+
     newtonstep(f,B);
 }
 
 proc newtonstepTest(ideal f, box x)"USAGE: compute newton step for poly f and box x
-RETURN: tests if there is exactly one solution in x (1), no solution (-1) or perhaps solution (0) 
+RETURN: tests if there is exactly one solution in x (1), no solution (-1) or perhaps solution (0)
 EXAMPLE: newtonstepTest"
 {
-	//compute newtonstep 
-	box nt=newtonstep(f,x);
-	if (boxIsinterior(nt,x)==1){return(1);}
-	if (typeof(boxIntersect(nt,x))=="box"){return(0);}
-	else 
-		{return(-1);}
+    //compute newtonstep
+    box nt=newtonstep(f,x);
+    if (boxIsinterior(nt,x)==1){return(1);}
+    if (typeof(boxIntersect(nt,x))=="box"){return(0);}
+    else {return(-1);}
 }
 
 example
 {
-	echo = 2;
+    echo = 2;
 
     ring R = 0,(x,y),lp;
     interval I = bounds(1, 2);
     box B1 = list(I, I^2); B1;
     ideal f=3xy,x2+3;
-    
+
     newtonstepTest(f,B1);
-    
+
     ideal J = 2x2-xy+2y2-2,2x2-3xy+3y2-2;  // V(I) has four elements
- 	interval i = bounds(-3/2,3/2);
+    interval i = bounds(-3/2,3/2);
     box B2 = list(i, i); B2;
-    
+
     newtonstepTest(J,B2);
 }
 // vim: ft=singular
