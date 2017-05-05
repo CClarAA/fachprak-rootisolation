@@ -1,9 +1,10 @@
 ///////////////////////////////////////////////////////////////////
-version="version invintervalmat.lib 0.1 Apr_2017 ";
+version="version invintervalmat.lib 0.1 May_2017 ";
 info="
-LIBRARY:    interval.lib implements interval arithmetic on polynomials
+LIBRARY:    invintervalmat.lib implements interval inversion via methods by Rohn
 AUTHORS:    Dominik Bendle
             Clara Petroll
+
 PROCEDURES:
 one_vector
 hadamardproduct
@@ -14,11 +15,9 @@ newtonstep
 ";
 ///////////////////////////////////////////////////////////////////
 
-
-//klappt das so eine lib hochzuladen?
 LIB "linalg.lib";
 LIB "aksaka.lib"; //needed to comupte logarithm
-LIB "interval.lib";
+LIB "interval.LIB";
 
 proc one_vector(int n)
 "USAGE: all vectors with +/- 1 and of size n
@@ -466,14 +465,15 @@ example
     print(inverse_ivmat(A)[2]);
 }
 
-proc newtonstep( ideal f, box x)
+proc newtonstep(ideal f, box x)
 "USAGE: compute newton step for poly f and box x
-RETURN: newtonstep(f,x)"
+RETURN: newtonstep(f,x)
+EXAMPLE: calculate a Newton-step"
 {
-    matrix midpoint=boxCenter(x);
+    box midbox = boxCenter(x);
 
     //interval extension of the jacobian matrix
-    ivmat Jaco=evalJacobianAtBox(f,x);
+    ivmat Jaco = evalJacobianAtBox(f,x);
 
     //test if Jaco is invertible
     if (inverse_ivmat(Jaco)[1]==-1)
@@ -482,42 +482,14 @@ RETURN: newtonstep(f,x)"
         return(x);
     }
 
-    //evtl auch besser machbar ohne substitute weil so schon ziemlich umständlich
-    //erzeuge ideal mit den variablen des baserings um substitute anzuwenden - > variables(vb) ist ideal
-    poly vb=1; int i;
-    for (i=1; i<=nvars(basering); i++)
-    {
-        vb=vb*var(i);
-    }
-    // erzeuge ideal mit den numbers aus midpoint
-    ideal points=midpoint[1,1];
-    for (i=2; i<=nvars(basering); i++)
-    {
-        points=points,midpoint[i,1];
-    }
+    // using box instead of matrix for center vector allows us
+    // to use evalIdealAtBox instead of substitute
+    box f_midbox = evalIdealAtBox(f, midbox);
 
-    ideal f_midpoint=substitute(f,variables(vb), points);
-
-    //convert the ideal f_midpoint into a box (damit wir dann boxapply anwenden können)
-    box f_midbox=bounds(0,0); //initialise zerobox
-    for (i=1; i<=nvars(basering); i++)
-    {
-        f_midbox=boxSet(f_midbox,i,bounds(leadcoef(f_midpoint[i]), leadcoef(f_midpoint[i])));
-    }
-
-    //convert matrix midpoint into box
-    box midbox=list(bounds(0,0));
-    for (i=1;i<=nvars(basering); i++)
-    {
-        midbox=boxSet(midbox,i,bounds(leadcoef(midpoint[i,1]), leadcoef(midpoint[i,1])));
-    }
-
-    box newton;
-    ivmat invJaco=inverse_ivmat(Jaco)[2];
+    ivmat invJaco = inverse_ivmat(Jaco)[2];
 
     //compute Newton step
     return(boxSubtract(midbox,applyMatrix(invJaco,f_midbox)));
-
 }
 
 example

@@ -501,16 +501,16 @@ example
 
 proc boxCenter(box M)
 "USAGE: boxCenter(M), M ivmat
-RETURN: matrix containing center elements of M
-EXAMPLE: compute center matrix"
+RETURN: box containing center elements of M
+EXAMPLE: compute center box"
 {
     int n = nvars(basering);
 
-    matrix C[n][1];
+    box C;
     int i;
 
     for (i = 1; i <= n; i++) {
-        C[i,1]=(M[i][1]+M[i][2])/2;
+        C.intervals[i] = (M[i][1] + M[i][2])/2;
     }
 
     return(C);
@@ -1220,12 +1220,9 @@ EXAMPLE: tests the above for intersection of ellipses."
     }
 
     if (ncols(I) == numvars) {
-        box Bcenter;
         // calculate center as box of intervals instead of numbers
         // so we may reuse other procedures
-        for (i = 1; i <= numvars; i++) {
-            Bcenter.intervals[i] = interval((B[i][1] + B[i][2])/2);
-        }
+        box Bcenter = boxCenter(B);
 
         ivmat J = evalJacobianAtBox(I, B);
         interval d = det(J);
