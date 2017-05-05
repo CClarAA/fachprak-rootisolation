@@ -460,4 +460,74 @@ example
     print(inverse_ivmat(A));
 }
 
+
+proc newtonstep( ideal f, box x)
+"USAGE: compute newton step for poly f and box x
+RETURN: newtonstep(f,x)"
+{
+	matrix midpoint=boxCenter(x);
+	
+	//interval extension of the jacobian matrix 
+	ivmat Jaco=evalJacobianAtBox(f,x);	
+	
+	//test if Jaco is invertible 
+	if (inverse_ivmat(Jaco)[1]==-1)
+		{
+		//if singular just take x as newton step
+		return(x);
+		}
+	
+	//evtl auch besser machbar ohne substitute weil so schon ziemlich umständlich	
+	//erzeuge ideal mit den variablen des baserings um substitute anzuwenden - > variables(vb) ist ideal
+	poly vb=1; int i;
+	for (i=1; i<=nvars(basering); i++)
+		{
+		vb=vb*var(i);
+		}
+	// erzeuge ideal mit den numbers aus midpoint
+	ideal points=midpoint[1,1];
+	for (i=2; i<=nvars(basering); i++)
+		{
+		points=points,midpoint[i,1];
+		}
+	
+	ideal f_midpoint=substitute(f,variables(vb), points); 
+	
+	//convert the ideal f_midpoint into a box (damit wir dann boxapply anwenden können)
+	box f_midbox=bounds(0,0); //initialise zerobox
+	for (i=1; i<=nvars(basering); i++)
+		{
+		f_midbox=boxSet(f_midbox,i,bounds(leadcoef(f_midpoint[i]), leadcoef(f_midpoint[i])));
+		}
+	
+	//convert matrix midpoint into box
+	box midbox=list(bounds(0,0));
+	for (i=1;i<=nvars(basering); i++)
+		{
+		midbox=boxSet(midbox,i,bounds(leadcoef(midpoint[i,1]), leadcoef(midpoint[i,1])));
+		}
+	
+	box newton;
+	ivmat invJaco=inverse_ivmat(Jaco)[2];
+	
+	//compute Newton step 
+	midbox;
+	11111;
+	applyMatrix(invJaco,f_midbox);
+	return(boxSubtract(midbox,applyMatrix(invJaco,f_midbox)));
+	
+}
+
+example
+{
+	echo = 2;
+
+    ring R = 0,(x,y),lp;
+    interval I = bounds(1, 2);
+    box B = list(I, I^2); B;
+    
+    ideal f=3xy,x2+3;
+    
+    newtonstep(f,B);
+}
 // vim: ft=singular
