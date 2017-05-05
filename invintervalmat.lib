@@ -17,7 +17,7 @@ newtonstep
 
 LIB "linalg.lib";
 LIB "aksaka.lib"; //needed to comupte logarithm
-LIB "interval.LIB";
+LIB "interval.lib";
 
 proc one_vector(int n)
 "USAGE: all vectors with +/- 1 and of size n
@@ -474,9 +474,10 @@ EXAMPLE: calculate a Newton-step"
 
     //interval extension of the jacobian matrix
     ivmat Jaco = evalJacobianAtBox(f,x);
+    list invResult = inverse_ivmat(Jaco);
 
     //test if Jaco is invertible
-    if (inverse_ivmat(Jaco)[1]==-1)
+    if (invResult[1]==-1)
     {
         //if singular just take x as newton step
         return(x);
@@ -486,7 +487,7 @@ EXAMPLE: calculate a Newton-step"
     // to use evalIdealAtBox instead of substitute
     box f_midbox = evalIdealAtBox(f, midbox);
 
-    ivmat invJaco = inverse_ivmat(Jaco)[2];
+    ivmat invJaco = invResult[2];
 
     //compute Newton step
     return(midbox - applyMatrix(invJaco,f_midbox));
