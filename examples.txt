@@ -1,4 +1,4 @@
-LIB "interval.LIB";
+LIB "interval.lib";
 
 example intervalAssign;
 example intervalGet;
