@@ -612,28 +612,26 @@ example
 }
 
 proc boxIsinterior(box A, box B)
-proc boxIntersect
-"USAGE: is A contained in int(B) 
-RETURN: 1 if A contained in int(B) else -1
+"USAGE: boxIsinterior(A, B), A, B box
+RETURN: 1 if A contained in int(B) else 0
 EXAMPLE: boxIsinterior"
 {
-	int n=nvars(basering);
-	for (int i=1; i<= n; i++)
-		{
-		if (A[i][1]<= B[i][1] || A[i][2]>=B[i][2]){return(-1);}
-		}
-	return(1);
+    int n = nvars(basering);
+    for (int i=1; i<= n; i++) {
+        if (A[i][1] <= B[i][1] || A[i][2] >= B[i][2]){return(0);}
+    }
+    return(1);
 }
-example 
+example
 {
-	echo=2;
-	ring R=0,(x,y,z), lp;
-	box A=list(bounds(1,2), bounds(2,3), bounds(1/2,7/2)); A;
-	box B1=list(bounds(0,5/2), bounds(1,4), bounds(0,9)); B1;
-	boxIsinterior(A,B1);
-	
-	box B2=list(bounds(2,4), bounds(1,4), bounds(0,9)); B2;
-	boxIsinterior(A,B2);
+    echo=2;
+    ring R=0,(x,y,z), lp;
+    box A=list(bounds(1,2), bounds(2,3), bounds(1/2,7/2)); A;
+    box B1=list(bounds(0,5/2), bounds(1,4), bounds(0,9)); B1;
+    boxIsinterior(A,B1);
+
+    box B2=list(bounds(2,4), bounds(1,4), bounds(0,9)); B2;
+    boxIsinterior(A,B2);
 }
 
 ///////////////////////////////////////////////////////////////////

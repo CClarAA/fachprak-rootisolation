@@ -512,9 +512,9 @@ EXAMPLE: newtonstepTest"
 {
     //compute newtonstep
     box nt=newtonstep(f,x);
-    if (boxIsinterior(nt,x)==1){return(1);}
-    if (typeof(intersect(nt,x))=="box"){return(0);}
-    else {return(-1);}
+    if (boxIsinterior(nt,x)) { return(1); }
+    if (typeof(intersect(nt,x))=="box") { return(0); }
+    else { return(-1); }
 }
 
 example

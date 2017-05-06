@@ -21,6 +21,7 @@ example boxEqual;
 example lengthBox;
 example splitBox;
 example boxIntersect;
+example boxIsinterior;
 
 example ivmatInit;
 example ivmatNrows;
