@@ -72,12 +72,12 @@ static proc mod_init()
     system("install", "box", "intersect",   boxIntersect,   4);
 
     newstruct("ivmat", "list rows");
-    system("install", "ivmat", "print", ivmatPrint, 1);
-    system("install", "ivmat", "[",     ivmatGet, 2);
-    system("install", "ivmat", "nrows", ivmatNrows, 1);
-    system("install", "ivmat", "ncols", ivmatNcols, 1);
-    system("install", "ivmat", "det",   determinant, 1);
-    system("install", "ivmat", "*",     ivmatMultiply, 2);
+    system("install", "ivmat", "print", ivmatPrint,             1);
+    system("install", "ivmat", "[",     ivmatGet,               2);
+    system("install", "ivmat", "nrows", ivmatNrows,             1);
+    system("install", "ivmat", "ncols", ivmatNcols,             1);
+    system("install", "ivmat", "det",   determinant,            1);
+    system("install", "ivmat", "*",     ivmatMultiplyGeneral,   2);
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -999,7 +999,7 @@ EXAMPLE: multiply matrices"
 }
 example
 {
-    echo = 2;
+    echo = 3;
     ring R = 0,x,lp;
 
     interval I = bounds(0, 1);
@@ -1099,7 +1099,7 @@ example
 }
 
 proc applyMatrix(ivmat A, box b)
-"USAGE: applyMatrix(A, b), A ivmat, b box
+"USAGE: A * b, A ivmat, b box
 RETURN: A*b
 EXAMPLE: apply matrix to box"
 {
@@ -1123,7 +1123,7 @@ EXAMPLE: apply matrix to box"
 }
 example
 {
-    echo = 2;
+    echo = 3;
     ring R = 0,(x,y,z),lp;
 
     ideal I = xyz3+z2y2+x,x4+y3+2z+3,xyz+1/2;
@@ -1131,11 +1131,26 @@ example
     box B = list(J,J,J);
 
     ivmat A = evalJacobianAtBox(I, B); A;
-    applyMatrix(A, B);
+    A*B;
 
-    applyMatrix(unitMatrix(3), B);
+    unitMatrix(3) * B;
 
-    applyMatrix(diagMatrix(3, bounds(0, 1)), B);
+    diagMatrix(3, bounds(0, 1)) * B;
+}
+
+proc ivmatMultiplyGeneral(ivmat A, B)
+"USAGE: A * B, A ivmat, B ivmat or box
+RETURN: usual matrix product where box is a nx1 matrix
+EXAMPLE: multiply matrices with matrices and boxes"
+{
+    if (typeof(B) == "ivmat") { return(ivmatMultiply(A, B)); }
+    if (typeof(B) == "box")   { return(applyMatrix(A, B)); }
+    ERROR("Type not supported.");
+}
+example
+{
+    example ivmatMultiply;
+    example applyMatrix;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -1257,7 +1272,7 @@ EXAMPLE: tests the above for intersection of ellipses."
 
         // calculate Bcenter - f(B)^(-1)f(Bcenter)
         box fB = evalIdealAtBox(I, Bcenter);
-        fB = Bcenter - applyMatrix(Jinverse, fB);
+        fB = Bcenter - (Jinverse * fB);
 
         def Bint = intersect(B, fB);
 
@@ -1342,7 +1357,7 @@ EXAMPLE: exclusionTest for intersection of two ellipses"
             zeroTest, B[i] = testPolyBox(I,B[i]);
 
             // maybe refine boxes in Bstar in later steps
-            if (zeroTest == 1) { B_star = insert(B_star, B[i]); i++; continue };
+            if (zeroTest == 1) { B_star = insert(B_star, B[i]); };
             if (zeroTest == 0) {
                 //case that box is smaller than the input limitsize
                 if (lengthBox(B[i]) <= limitsize){

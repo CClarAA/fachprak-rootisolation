@@ -490,7 +490,7 @@ EXAMPLE: calculate a Newton-step"
     ivmat invJaco = invResult[2];
 
     //compute Newton step
-    return(midbox - applyMatrix(invJaco,f_midbox));
+    return(midbox - (invJaco * f_midbox));
 }
 
 example
@@ -506,7 +506,8 @@ example
     newtonstep(f,B);
 }
 
-proc newtonstepTest(ideal f, box x)"USAGE: compute newton step for poly f and box x
+proc newtonstepTest(ideal f, box x)
+"USAGE: compute newton step for poly f and box x
 RETURN: tests if there is exactly one solution in x (1), no solution (-1) or perhaps solution (0)
 EXAMPLE: newtonstepTest"
 {

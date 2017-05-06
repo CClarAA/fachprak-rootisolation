@@ -37,9 +37,8 @@ example cofactor;
 example adjunct;
 example ivmatCenter;
 example ivmatRadius;
-example ivmatMultiply;
 example ivmatGaussian;
-example applyMatrix;
+example ivmatMultiplyGeneral;
 
 example evalPolyAtBox;
 example evalJacobianAtBox;
