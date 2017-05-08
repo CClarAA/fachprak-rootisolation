@@ -541,7 +541,8 @@ EXAMPLE: split two-dimensional interval into two"
     }
 
     list boxes = list();
-    number mean = (B[imax][1] + B[imax][2])/2;
+    number ratio = number(random(45, 55))/100;
+    number mean = ratio * B[imax][1] + (1 - ratio) * B[imax][2];
 
     boxes = insert(boxes, boxSet(B, imax, bounds(B[imax][1], mean)));
     boxes = insert(boxes, boxSet(B, imax, bounds(mean, B[imax][2])));
@@ -1385,7 +1386,8 @@ example
     box B = list(i, i);
 
     list result = exclusionTest(I, B, 1/128);
-    result;
+    size(result[1]);
+    size(result[2]);
 }
 
 // vim: ft=singular
