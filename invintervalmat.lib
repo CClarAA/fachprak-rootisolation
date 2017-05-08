@@ -515,7 +515,7 @@ EXAMPLE: newtonstepTest"
     box nt=newtonstep(f,x);
     if (boxIsinterior(nt,x)) { return(1); }
     if (typeof(intersect(nt,x))=="box") { return(0); }
-    else { return(-1); }
+    else    { return(-1); }
 }
 
 example
