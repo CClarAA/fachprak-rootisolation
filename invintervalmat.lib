@@ -401,17 +401,19 @@ RETURN: inverse of A  "
 
     list vectors=one_vector(n);
     list matrices;
+    def bymat;
 
     //compute all matrices B_y
     for (int i=1; i<= 2^n; i++)
     {
-        if (bymatrix(A,vectors[i])==-1)
+        bymat = bymatrix(A,vectors[i]);
+        if (typeof(bymat) == "int")
         {
             return(list(-1));
             //ERROR("matrix A is singular");
         }
 
-        B_y=bymatrix(A,vectors[i]);
+        B_y = bymat;
 
         matrices[i]=B_y;
     }
