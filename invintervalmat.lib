@@ -536,4 +536,115 @@ example
 
     newtonstepTest(J,B2);
 }
+
+proc testPolyBox2(ideal I, box B)
+"USAGE: testPolyBox(I, intervals) or testPolyBox(I, I1, I2, ..)
+        I ideal, intervals list of intervals, I1, I2, .. intervals
+RETURN: -1, if ideal has no zeros in given box, 1, if unique zero in given box
+        0 if test is inconclusive
+EXAMPLE: tests the above for intersection of ellipses."
+{
+    int numvars = nvars(basering);
+    int i;
+
+    interval tmp;
+
+    for (i = 1; i <= ncols(I); i++) {
+        tmp = evalPolyAtBox(I[i], B);
+        // check if 0 contained in every interval
+        // return -1 if not
+        if (tmp[1]*tmp[2] > 0) { return(-1, B); }
+    }
+
+    if (ncols(I) == numvars) {
+        // calculate center as box of intervals instead of numbers
+        // so we may reuse other procedures
+        box Bnew = newtonstep(I, B);
+
+        if (boxIsinterior(Bnew, B)) { return(1, Bnew); }
+
+        def Bint = intersect(B, Bnew);
+
+        // if intersection is emtpy Bint == -1
+        if (typeof(Bint) == "int") { return(-1, B); }
+
+        // if equality holds, fB is contained in box B
+        // by paper, fB contains unique solution
+        return(0, Bint);
+    }
+
+    // no condition could be verified
+    return(0, B);
+}
+example
+{
+    echo = 2;
+    ring R = 0,(x,y),lp;
+    ideal I = 2x2-xy+2y2-2, 2x2-3xy+3y2-2;
+
+    interval unit = bounds(0, 1);
+    // there may be common zeros in [0,1]x[0,1]
+    testPolyBox2(I, list(unit, unit));
+
+    // there are no common zeros in [0,0.5]x[0,0.5]
+    testPolyBox2(I, list(unit/2, unit/2));
+}
+
+proc exclusionTest2(ideal I, box start, number limitsize)
+"USAGE: exclusion test for roots with interval arithmetic
+RETURN: list of boxes
+EXAMPLE: exclusionTest for intersection of two ellipses"
+{
+    //set of boxes smaller than size
+    list B_size;
+    //set of boxes which exactly contain one solution
+    list B_star;
+    //set of boxes initialised to input
+    list B = list(start);
+    //help set of boxes
+    list B_prime;
+
+    int i;
+    int zeroTest;
+
+    while (size(B) <> 0) {
+        // B_prime is empty set
+        B_prime = list();
+
+        for (i=1; i<=size(B); i++) {
+            //case that maybe there is a root in the box
+            zeroTest, B[i] = testPolyBox2(I,B[i]);
+
+            // maybe refine boxes in Bstar in later steps
+            if (zeroTest == 1) { B_star = insert(B_star, B[i]); };
+            if (zeroTest == 0) {
+                //case that box is smaller than the input limitsize
+                if (lengthBox(B[i]) <= limitsize){
+                    B_size = insert(B_size, B[i]);
+                } else {
+                    // else split the box and put the smaller boxes to B_prime
+                    B_prime = B_prime + splitBox(B[i]);
+                }
+            }
+        }
+
+        // set B=B_prime
+        B = B_prime;
+    }
+    return(B_size, B_star);
+}
+example
+{
+    echo = 2;
+
+    ring R = 0,(x,y),lp;
+    ideal I = 2x2-xy+2y2-2,2x2-3xy+3y2-2;  // V(I) has four elements
+
+    interval i = bounds(-3/2,3/2);
+    box B = list(i, i);
+
+    list result = exclusionTest2(I, B, 1/512);
+    size(result[1]);
+    size(result[2]);
+}
 // vim: ft=singular
