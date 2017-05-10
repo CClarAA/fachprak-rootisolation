@@ -527,9 +527,9 @@ example
     boxCenter(B);
 }
 
-proc splitBox(box B)
-"USAGE: splitBox(box), box list of intervals
-RETURN: new list of smaller boxes
+proc splitBox(box B, ideal I)
+"USAGE: splitBox(box), box list of intervals, I ideal
+RETURN: new list of smaller boxes, such that intersection of borders does not contain zeros of I
 EXAMPLE: split two-dimensional interval into two"
 {
     // at first split only at largest interval
@@ -540,14 +540,34 @@ EXAMPLE: split two-dimensional interval into two"
         if (length(B[i]) > length(B[imax])) { imax = i; }
     }
 
-    list boxes = list();
-    number ratio = number(random(45, 55))/100;
-    number mean = ratio * B[imax][1] + (1 - ratio) * B[imax][2];
+    number ratio = 1/2;
+    number mean;
+    box intersection;
+    ideal Inew;
 
-    boxes = insert(boxes, boxSet(B, imax, bounds(B[imax][1], mean)));
-    boxes = insert(boxes, boxSet(B, imax, bounds(mean, B[imax][2])));
+    while(1) {
+        mean = ratio * B[imax][1] + (1 - ratio) * B[imax][2];
 
-    return(boxes);
+        intersection = evalIdealAtBox(I, boxSet(B, imax, mean));
+        for (i = 1; i <= n; i++) {
+            // check if any interval does not contain zero
+            if (intersection[i][1]*intersection[i][2] > 0) { break; }
+        }
+
+        Inew = I + (var(imax) - mean);
+        // check if groebner basis is trivial
+        if (std(Inew) == 1) { break; }
+
+        // else there must?/might be a zero on the intersection,
+        // so increase ratio slightly
+        ratio = ratio * 11/10;
+    }
+
+    // now split boxes
+    box boxLeft  = boxSet(B, imax, bounds(B[imax][1], mean));
+    box boxRight = boxSet(B, imax, bounds(mean, B[imax][2]));
+
+    return(list(boxLeft, boxRight));
 }
 example
 {
@@ -558,7 +578,7 @@ example
                  bounds(0,2));
 
     B;
-    splitBox(B);
+    splitBox(B,1);
 }
 
 proc boxIntersect
@@ -1365,7 +1385,7 @@ EXAMPLE: exclusionTest for intersection of two ellipses"
                     B_size = insert(B_size, B[i]);
                 } else {
                     // else split the box and put the smaller boxes to B_prime
-                    B_prime = B_prime + splitBox(B[i]);
+                    B_prime = B_prime + splitBox(B[i], I);
                 }
             }
         }
@@ -1385,7 +1405,7 @@ example
     interval i = bounds(-3/2,3/2);
     box B = list(i, i);
 
-    list result = exclusionTest(I, B, 1/128);
+    list result = exclusionTest(I, B, 1/512);
     size(result[1]);
     size(result[2]);
 }
