@@ -528,7 +528,7 @@ example
 }
 
 proc splitBox(box B, ideal I)
-"USAGE: splitBox(box), box list of intervals, I ideal
+"USAGE: splitBox(box, I), box list of intervals, I ideal
 RETURN: new list of smaller boxes, such that intersection of borders does not contain zeros of I
 EXAMPLE: split two-dimensional interval into two"
 {
@@ -559,8 +559,8 @@ EXAMPLE: split two-dimensional interval into two"
         if (std(Inew) == 1) { break; }
 
         // else there must?/might be a zero on the intersection,
-        // so increase ratio slightly
-        ratio = ratio * 11/10;
+        // so decrease ratio slightly
+        ratio = ratio * 9/10;
     }
 
     // now split boxes
