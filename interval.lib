@@ -561,6 +561,9 @@ EXAMPLE: split two-dimensional interval into two"
         // else there must?/might be a zero on the intersection,
         // so decrease ratio slightly
         ratio = ratio * 9/10;
+
+        // make sure algorithm terminates, after taking too many steps
+        if { ratio < 1/100 } { print("splitBox took too long"); break; }
     }
 
     // now split boxes
