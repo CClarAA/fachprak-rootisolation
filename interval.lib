@@ -6,6 +6,7 @@ AUTHORS:    Dominik Bendle
             Clara Petroll
 
 OVERLOADS:
+/*
 // intervals
 [           intervalGet         indexing
 =           intervalAssign      assigning
@@ -17,6 +18,7 @@ print       intervalPrint       pretty print
 *           intervalMultiply    multiplication
 /           intervalDivide      division
 ^           intervalPotentiate  potentiation
+*/
 
 // boxes
 =           boxSet              assigning
@@ -50,6 +52,8 @@ exclusionTest           first version of our exclusion test
 
 static proc mod_init()
 {
+    LIB "dyn_modules/interval.so";
+    /*
     newstruct("interval", "list l");
     system("install", "interval", "[",      intervalGet,        2);
     system("install", "interval", "=",      intervalAssign,     1);
@@ -62,6 +66,7 @@ static proc mod_init()
     system("install", "interval", "*",      intervalMultiply,   2);
     system("install", "interval", "/",      intervalDivide,     2);
     system("install", "interval", "^",      intervalPotentiate, 2);
+    */
 
     newstruct("box", "list intervals");
     system("install", "box", "=",           boxAssign,      1);
@@ -82,6 +87,7 @@ static proc mod_init()
 
 ///////////////////////////////////////////////////////////////////
 
+/*
 // INTERVAL FUNCTIONS
 
 proc bounds(number a, number b)
@@ -341,8 +347,20 @@ example
 }
 
 ///////////////////////////////////////////////////////////////////
+*/
 
 // BOX FUNCTIONS
+
+proc bounds(number a, number b)
+{
+    interval I = (a, b);
+    return(I);
+}
+
+proc length(interval I)
+{
+    return(I[2]-I[1]);
+}
 
 proc boxAssign(list intervals)
 "USAGE: B = I1,I2,.., I1, I2 interval
@@ -378,8 +396,8 @@ example
     box B = list(I); B;
 
     ring S = 0,x(1..15),lp;
-    I = bounds(1/2, 2/3);
-    B = list(I, I^2, I^3); B;
+    interval J = bounds(1/2, 2/3);
+    box C = list(J, J^2, J^3); C;
 }
 
 proc boxSet(box B, int n, interval I)
@@ -452,7 +470,7 @@ EXAMPLE: test boxes for equality"
 example
 {
     echo = 2;
-    ring R = 0,x,lp;
+    ring R = 0,(x,y),lp;
 
     interval I = bounds(0,1);
     interval J = bounds(1,2);
@@ -466,13 +484,27 @@ example
 
 proc boxSubtract(box B, box C)
 "USAGE: B-C, B, C box
-RETURN: componentwise subtraction"
+RETURN: componentwise subtraction
+EXAMPLE: subtract boxes"
 {
     int n = nvars(basering);
     box OUT;
     for (int i = 1; i <= n; i++) { OUT.intervals[i] = B[i] - C[i]; };
     return(OUT);
 }
+example
+{
+    echo = 2;
+    ring R = 0,(x,y),lp;
+
+    interval I = bounds(0,1);
+    interval J = bounds(1,2);
+    box B = list(I, J);
+    box C = list(J);
+
+    B - C;
+}
+
 
 proc lengthBox(box B)
 "USAGE: length(B), B box
@@ -510,7 +542,7 @@ EXAMPLE: compute center box"
     int i;
 
     for (i = 1; i <= n; i++) {
-        C.intervals[i] = (M[i][1] + M[i][2])/2;
+        C.intervals[i] = interval((M[i][1] + M[i][2])/2);
     }
 
     return(C);
@@ -629,7 +661,7 @@ example
 
     box B = list(I, J);
     box C = list(J, I);
-    box D = list(I, I + 2);
+    box D = list(I, I + interval(2));
 
     intersect(B, C);
     intersect(C, D);
