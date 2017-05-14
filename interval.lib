@@ -510,7 +510,7 @@ EXAMPLE: compute center box"
     int i;
 
     for (i = 1; i <= n; i++) {
-        C.intervals[i] = (M[i][1] + M[i][2])/2;
+        C.intervals[i] = interval((M[i][1] + M[i][2])/2);
     }
 
     return(C);
