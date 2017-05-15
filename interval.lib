@@ -1308,8 +1308,6 @@ EXAMPLE: tests the above for intersection of ellipses."
         if (tmp[1]*tmp[2] > 0) { return(-1, B); }
     }
 
-    ~;
-
     if (ncols(I) == numvars) {
         // calculate center as box of intervals instead of numbers
         // so we may reuse other procedures

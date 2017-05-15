@@ -387,6 +387,7 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2) {
             // initialise to be sure
             number lo = nInit(0), up = nInit(0);
 
+            // TODO rewrite conditions to be more intuitive
             if (p % 2 == 1 || p == 0 || !intervalContainsZero(I) ||
                     nIsZero(I->lower) || nIsZero(I->upper)) {
                 nPower(I->lower, p, &lo);
