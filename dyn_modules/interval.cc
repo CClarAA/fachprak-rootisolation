@@ -134,6 +134,11 @@ BOOLEAN interval_Assign(leftv result, leftv args) {
     return FALSE;
 }
 
+// alias to interval_Assign
+BOOLEAN bounds(leftv result, leftv args) {
+    return interval_Assign(result, args);
+}
+
 // interval -> interval procedures
 
 interval* intervalScalarMultiply(number a, interval *I) {
@@ -444,6 +449,10 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2) {
         }
     }
 
+    nNormalize(RES->lower);
+    nNormalize(RES->upper);
+
+
     result->rtyp = intervalID;
     result->data = (void*) RES;
     return FALSE;
@@ -463,7 +472,7 @@ extern "C" int mod_init(SModulFunctions* psModulFunctions) {
     // debug
     Print("Created type interval with id %d\n", intervalID);
 
-    //psModulFunctions->iiAddCproc("interval.lib", "bounds", FALSE, bounds);
+    psModulFunctions->iiAddCproc("interval.lib", "bounds", FALSE, bounds);
 
     return MAX_TOK;
 }

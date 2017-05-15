@@ -351,12 +351,6 @@ example
 
 // BOX FUNCTIONS
 
-proc bounds(number a, number b)
-{
-    interval I = (a, b);
-    return(I);
-}
-
 proc length(interval I)
 {
     return(I[2]-I[1]);
@@ -1313,6 +1307,8 @@ EXAMPLE: tests the above for intersection of ellipses."
         // return -1 if not
         if (tmp[1]*tmp[2] > 0) { return(-1, B); }
     }
+
+    ~;
 
     if (ncols(I) == numvars) {
         // calculate center as box of intervals instead of numbers
