@@ -21,6 +21,12 @@ struct interval {
         lower = a;
         upper = b;
     }
+
+    // destructor: triggers on delete
+    ~interval() {
+        nDelete(&lower);
+        nDelete(&upper);
+    }
 };
 
 // type ID
@@ -59,14 +65,8 @@ void* interval_Copy(blackbox *b, void *d) {
 }
 
 // helper function
-void intervalDelete(interval *I) {
-    nDelete(&(I->lower));
-    nDelete(&(I->upper));
-    delete I;
-}
-
 void interval_Destroy(blackbox *b, void *d) {
-    intervalDelete((interval*) d);
+    delete (interval*) d;
 }
 
 // assigning values to intervals
@@ -80,7 +80,7 @@ BOOLEAN interval_Assign(leftv result, leftv args) {
         if (result->Data() == args->Data()) {
             return FALSE;
         }
-        intervalDelete((interval*) result->Data());
+        delete (interval*) result->Data();
     }
 
     /*
@@ -220,7 +220,7 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2) {
 
     // destroy data of result if it exists
     if (result->Data() != NULL && result->Typ() == intervalID) {
-        intervalDelete((interval*) result->Data());
+        delete (interval*) result->Data();
     }
 
     switch(op) {
@@ -344,7 +344,7 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2) {
                     nDelete(&n);
                 }
 
-                intervalDelete(I2inv);
+                delete I2inv;
                 break;
             } else {
                 // i2 is not an interval
