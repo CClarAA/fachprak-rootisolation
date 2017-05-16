@@ -242,6 +242,14 @@ interval* intervalMultiply(interval *I, interval *J) {
     return new interval(lo, up);
 }
 
+interval* intervalAdd(interval *I, interval *J) {
+    number lo, up;
+    lo = nAdd(I->lower, J->lower);
+    up = nAdd(I->upper, J->upper);
+
+    return new interval(lo, up);
+}
+
 interval* intervalSubtract(interval *I, interval *J) {
     number lo, up;
     lo = nSub(I->lower, J->upper);
@@ -262,6 +270,23 @@ bool intervalContainsZero(interval *I) {
     nDelete(&n);
 
     return result;
+}
+
+interval* intervalPower(interval *I, int p) {
+    // TODO rewrite conditions to be more intuitive
+    number lo = nInit(0), up = nInit(0);
+    if (p % 2 == 1 || p == 0 || !intervalContainsZero(I) ||
+            nIsZero(I->lower) || nIsZero(I->upper)) {
+        nPower(I->lower, p, &lo);
+        nPower(I->upper, p, &up);
+    } else {
+        if (nGreater(I->lower, I->upper)) {
+            nPower(I->lower, p, &up);
+        } else {
+            nPower(I->upper, p, &up);
+        }
+    }
+    return new interval(lo, up);
 }
 
 /*
@@ -297,7 +322,6 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2) {
     switch(op) {
         case '+':
         {
-            number lo, up;
             if (i1->Typ() != intervalID || i2->Typ() != intervalID) {
                 Werror("syntax: <interval> + <interval>");
                 return TRUE;
@@ -306,10 +330,7 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2) {
             I1 = (interval*) i1->Data();
             I2 = (interval*) i2->Data();
 
-            lo = nAdd(I1->lower, I2->lower);
-            up = nAdd(I1->upper, I2->upper);
-
-            RES = new interval(lo, up);
+            RES = intervalAdd(I1, I2);
             break;
         }
         case '-':
@@ -451,23 +472,7 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2) {
             }
             interval *I = (interval*) i1->Data();
 
-            // initialise to be sure
-            number lo = nInit(0), up = nInit(0);
-
-            // TODO rewrite conditions to be more intuitive
-            if (p % 2 == 1 || p == 0 || !intervalContainsZero(I) ||
-                    nIsZero(I->lower) || nIsZero(I->upper)) {
-                nPower(I->lower, p, &lo);
-                nPower(I->upper, p, &up);
-            } else {
-                lo = nInit(0);
-                if (nGreater(I->lower, I->upper)) {
-                    nPower(I->lower, p, &up);
-                } else {
-                    nPower(I->upper, p, &up);
-                }
-            }
-            RES = new interval(lo, up);
+            RES = intervalPower(I, p);
             break;
         }
         case EQUAL_EQUAL:
@@ -794,6 +799,62 @@ BOOLEAN boxSet(leftv result, leftv args) {
 }
 
 /*
+ * POLY FUNCTIONS
+ */
+
+BOOLEAN evalPolyAtBox(leftv result, leftv args) {
+    assume(result->Typ() == intervalID);
+    if (result->Data() != NULL) {
+        delete (box*) result->Data();
+    }
+
+    if (args == NULL || args->Typ() != POLY_CMD ||
+            args->next == NULL || args->next->Typ() != boxID) {
+        Werror("syntax: evalPolyAtBox(<poly>, <box>)");
+        return TRUE;
+    }
+
+    int i, pot, n = currRing->N;
+    poly p = (poly) args->Data();
+    box *B = (box*) args->next->Data();
+
+    interval *tmp, *tmpPot, *tmpMonom, *RES = new interval();
+    number c;
+
+    while(p != NULL) {
+        tmpMonom = new interval(nInit(1));
+
+        for (i = 1; i <= n; i++) {
+            pot = pGetExp(p, i);
+
+            tmpPot = intervalPower(B->intervals[i-1], pot);
+            tmp = intervalMultiply(tmpMonom, tmpPot);
+
+            delete tmpMonom;
+            delete tmpPot;
+
+            tmpMonom = tmp;
+        }
+
+        tmp = intervalScalarMultiply(p->coef, tmpMonom);
+        delete tmpMonom;
+        tmpMonom = tmp;
+
+        tmp = intervalAdd(RES, tmpMonom);
+        delete RES;
+        delete tmpMonom;
+
+        RES = tmp;
+
+        p = p->next;
+    }
+
+    result->rtyp = intervalID;
+    result->data = (void*) RES;
+    return FALSE;
+}
+
+/*
  * INIT MODULE
  */
 
@@ -828,6 +889,7 @@ extern "C" int mod_init(SModulFunctions* psModulFunctions) {
     psModulFunctions->iiAddCproc("interval.lib", "bounds", FALSE, bounds);
     psModulFunctions->iiAddCproc("interval.lib", "length", FALSE, length);
     psModulFunctions->iiAddCproc("interval.lib", "boxSet", FALSE, boxSet);
+    psModulFunctions->iiAddCproc("interval.lib", "evalPolyAtBox", FALSE, evalPolyAtBox);
 
     return MAX_TOK;
 }

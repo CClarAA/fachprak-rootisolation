@@ -724,59 +724,6 @@ example
 
 // POLYNOMIAL APPLICATIONS
 
-// naive (?) implementation
-proc evalPolyAtBox(poly f, box B)
-"USAGE: evalPolyAtBox(f, B), f poly, B box
-RETURN: interval extension ff(intervals)
-EXAMPLE: computes interval extension of polynomial f"
-{
-    int numvars = nvars(basering);
-
-    // neutral elemen of addition
-    interval resultWhole = 0;
-    interval resultMonom;
-
-    int i;
-    number coeff;
-    intvec exponent;
-
-    // handle each monomial separately
-    while (f <> 0) {
-        coeff = leadcoef(f);
-        exponent = leadexp(f);
-
-        // neutral element of multiplication
-        resultMonom = 1;
-
-        for (i = 1; i <= numvars; i++) {
-            resultMonom = resultMonom * B[i] ^ exponent[i];
-        }
-
-        resultWhole = resultWhole + coeff * resultMonom;
-        f = f - lead(f);
-    }
-
-    return(resultWhole);
-}
-example
-{
-    echo = 2;
-    ring R = 0,x,lp;
-    interval I1 = bounds(0, 1); I1;
-
-    poly f = x3 + 4x + 3;
-
-    evalPolyAtBox(f, list(I1));
-
-    ring S = 0,(x,y,z),lp;
-    interval I2 = bounds(0, 1);
-    box B = list(I2, I2, I2);
-
-    poly f = xyz2 + 2x2 + (3/2)*y3x + z + 1;
-
-    evalPolyAtBox(f, B);
-}
-
 proc evalJacobianAtBox(ideal I, box B)
 "USAGE: evalJacobianAtBox(I, B), I ideal B box
 RETURN: jacobian matrix of I where polynomials are evaluated at the given box
