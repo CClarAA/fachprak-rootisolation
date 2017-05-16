@@ -208,6 +208,10 @@ interval* intervalSubtract(interval *I, interval *J) {
     return new interval(lo, up);
 }
 
+bool intervalEqual(interval *I, interval *J) {
+    return nEqual(I->lower, J->lower) && nEqual(I->upper, J->upper);
+}
+
 // ckeck if zero is contained in an interval
 bool intervalContainsZero(interval *I) {
     number n = nMult(I->lower, I->upper);
@@ -433,8 +437,7 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2) {
             I1 = (interval*) i1->Data();
             I2 = (interval*) i2->Data();
 
-            bool isEq;
-            isEq = nEqual(I1->lower, I2->lower) && nEqual(I1->upper, I2->upper);
+            bool isEq = intervalEqual(I1, I2);
             result->rtyp = INT_CMD;
             result->data = (void*) isEq;
             return FALSE;
