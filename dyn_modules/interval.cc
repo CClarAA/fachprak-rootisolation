@@ -80,7 +80,7 @@ BOOLEAN interval_Assign(leftv result, leftv args) {
     interval *RES;
 
     // destroy data of result if it exists
-    if (result != NULL && result->Data() != NULL && result->Typ() == intervalID) {
+    if (result != NULL && result->Data() != NULL) {
         // "I=I" (same pointers)
         if (result->Data() == args->Data()) {
             return FALSE;
@@ -200,6 +200,14 @@ interval* intervalMultiply(interval *I, interval *J) {
     return new interval(lo, up);
 }
 
+interval* intervalSubtract(interval *I, interval *J) {
+    number lo, up;
+    lo = nSub(I->lower, J->upper);
+    up = nSub(I->upper, J->lower);
+
+    return new interval(lo, up);
+}
+
 // ckeck if zero is contained in an interval
 bool intervalContainsZero(interval *I) {
     number n = nMult(I->lower, I->upper);
@@ -236,7 +244,7 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2) {
     interval *RES;
 
     // destroy data of result if it exists
-    if (result->Data() != NULL && result->Typ() == intervalID) {
+    if (result->Data() != NULL) {
         delete (interval*) result->Data();
     }
 
@@ -266,13 +274,8 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2) {
                 return TRUE;
             }
             interval *I1, *I2;
-            I1 = (interval*) i1->Data();
-            I2 = (interval*) i2->Data();
 
-            lo = nSub(I1->lower, I2->upper);
-            up = nSub(I1->upper, I2->lower);
-
-            RES = new interval(lo, up);
+            RES = intervalSubtract(I1, I2);
             break;
         }
         case '*':
