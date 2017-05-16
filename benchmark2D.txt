@@ -1,0 +1,15 @@
+timer = 1;
+system("--ticks-per-sec", 1000);
+int t = timer;
+LIB "interval.lib";
+
+ring R = 0,(x,y),lp;
+ideal I = 2x2-xy+2y2-2,2x2-3xy+3y2-2;
+
+interval i = bounds(-3/2,3/2);
+box B = list(i, i);
+
+list result = exclusionTest(I, B, 1/512);
+print(string(size(result[1]), " boxes smaller than 1/512"));
+print(string(size(result[2]), " unique solutions"));
+print(string("took ", timer-t, " ms"));
