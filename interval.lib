@@ -66,7 +66,6 @@ static proc mod_init()
     system("install", "interval", "*",      intervalMultiply,   2);
     system("install", "interval", "/",      intervalDivide,     2);
     system("install", "interval", "^",      intervalPotentiate, 2);
-    */
 
     newstruct("box", "list intervals");
     system("install", "box", "=",           boxAssign,      1);
@@ -75,6 +74,7 @@ static proc mod_init()
     system("install", "box", "print",       boxPrint,       1);
     system("install", "box", "-",           boxSubtract,    2);
     system("install", "box", "intersect",   boxIntersect,   4);
+    */
 
     newstruct("ivmat", "list rows");
     system("install", "ivmat", "print", ivmatPrint,             1);
@@ -351,6 +351,7 @@ example
 
 // BOX FUNCTIONS
 
+/*
 proc boxAssign(list intervals)
 "USAGE: B = I1,I2,.., I1, I2 interval
 RETURN: Box consisting of given intervals honoring amount of ring variables
@@ -493,7 +494,7 @@ example
 
     B - C;
 }
-
+*/
 
 proc lengthBox(box B)
 "USAGE: length(B), B box
@@ -527,14 +528,14 @@ EXAMPLE: compute center box"
 {
     int n = nvars(basering);
 
-    box C;
+    list C;
     int i;
 
     for (i = 1; i <= n; i++) {
-        C.intervals[i] = interval((M[i][1] + M[i][2])/2);
+        C[i] = interval((M[i][1] + M[i][2])/2);
     }
 
-    return(C);
+    return(box(C));
 }
 example
 {
@@ -569,7 +570,7 @@ EXAMPLE: split two-dimensional interval into two"
     while(1) {
         mean = ratio * B[imax][1] + (1 - ratio) * B[imax][2];
 
-        intersection = evalIdealAtBox(I, boxSet(B, imax, mean));
+        intersection = evalIdealAtBox(I, boxSet(B, imax, interval(mean)));
         for (i = 1; i <= n; i++) {
             // check if any interval does not contain zero
             if (intersection[i][1]*intersection[i][2] > 0) { break; }
@@ -605,6 +606,7 @@ example
     splitBox(B,1);
 }
 
+/*
 proc boxIntersect
 "USAGE: intersect(B1, B2, ...) Bi box
 RETURN: intersection B of the boxes Bi or -1 if the intersection is empty
@@ -655,6 +657,7 @@ example
     intersect(B, C);
     intersect(C, D);
 }
+*/
 
 proc boxIsinterior(box A, box B)
 "USAGE: boxIsinterior(A, B), A, B box
@@ -773,7 +776,7 @@ example
     ring R = 0,(x,y),lp;
 
     interval I = bounds(1, 2);
-    ivmat A = ivmatAssign(2, 2, I, I^2, I/I, -I);
+    ivmat A = ivmatAssign(2, 2, I, I^2, I/I, interval(0)-I);
     A;
 }
 
@@ -884,7 +887,7 @@ example
     det(E);
 
     interval I = bounds(1/3, 4/3);
-    ivmat A = ivmatAssign(2, 2, I, I+1, I+2, I^2); A;
+    ivmat A = ivmatAssign(2, 2, I, I+interval(1), I+interval(2), I^2); A;
     det(A);
 }
 
@@ -1049,7 +1052,7 @@ example
 
     interval I = bounds(0, 1);
     ivmat E = ivmatInit(3,3);
-    for (int i = 1; i<=3; i++) { E = ivmatSet(E, i, i, I+i); } E;
+    for (int i = 1; i<=3; i++) { E = ivmatSet(E, i, i, I+interval(i)); } E;
 
     interval z = 0;
     interval J1 = bounds(1/3, 3/7);
@@ -1153,7 +1156,7 @@ EXAMPLE: apply matrix to box"
     if (ncols(A) <> n || nrows(A) <> n) { ERROR("Matrix has wrong dimensions"); }
 
     int i, j;
-    box result;
+    list result;
     interval tmp;
 
     for (i = 1; i <= n; i++) {
@@ -1161,10 +1164,10 @@ EXAMPLE: apply matrix to box"
         for (j = 1; j <= n; j++) {
             tmp = tmp + A[i][j] * b[j];
         }
-        result.intervals[i] = tmp;
+        result[i] = tmp;
     }
 
-    return(result);
+    return(box(result));
 }
 example
 {
@@ -1402,7 +1405,7 @@ EXAMPLE: exclusionTest for intersection of two ellipses"
             zeroTest, B[i] = testPolyBox(I,B[i]);
 
             // maybe refine boxes in Bstar in later steps
-            if (zeroTest == 1) { B_star = insert(B_star, B[i]); };
+            if (zeroTest == 1) { B_star = B_star + list(B[i]); };
             if (zeroTest == 0) {
                 //case that box is smaller than the input limitsize
                 if (lengthBox(B[i]) <= limitsize){

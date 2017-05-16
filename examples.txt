@@ -1,13 +1,7 @@
 LIB "interval.lib";
 
-example boxAssign;
-example boxSet;
-example boxPrint;
-example boxGet;
-example boxEqual;
 example lengthBox;
 example splitBox;
-example boxIntersect;
 example boxIsinterior;
 
 example ivmatInit;
