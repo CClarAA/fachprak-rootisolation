@@ -351,11 +351,6 @@ example
 
 // BOX FUNCTIONS
 
-proc length(interval I)
-{
-    return(I[2]-I[1]);
-}
-
 proc boxAssign(list intervals)
 "USAGE: B = I1,I2,.., I1, I2 interval
 RETURN: Box consisting of given intervals honoring amount of ring variables

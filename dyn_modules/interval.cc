@@ -22,6 +22,11 @@ struct interval {
         upper = b;
     }
 
+    interval(const interval& I) {
+        lower = nCopy(I.lower);
+        upper = nCopy(I.upper);
+    }
+
     // destructor: triggers on delete
     ~interval() {
         nDelete(&lower);
@@ -59,12 +64,12 @@ char* interval_String(blackbox *b, void *d) {
 // TODO may not actually work
 void* interval_Copy(blackbox *b, void *d) {
     interval *i = (interval*) d;
-    interval *inew = new interval(nCopy(i->lower), nCopy(i->upper));
+    interval *inew = new interval(*i);
 
     return (void*) inew;
 }
 
-// helper function
+// destroy interval
 void interval_Destroy(blackbox *b, void *d) {
     delete (interval*) d;
 }
@@ -134,9 +139,21 @@ BOOLEAN interval_Assign(leftv result, leftv args) {
     return FALSE;
 }
 
-// alias to interval_Assign
+// alias to interval_Assign, used in interval.lib
 BOOLEAN bounds(leftv result, leftv args) {
     return interval_Assign(result, args);
+}
+
+BOOLEAN length(leftv result, leftv arg) {
+    if (arg != NULL && arg->Typ() == intervalID) {
+        interval *I = (interval*) arg->Data();
+        result->rtyp = NUMBER_CMD;
+        result->data = (void*) nSub(I->upper, I->lower);
+        return FALSE;
+    }
+
+    Werror("syntax: length(<interval>)");
+    return TRUE;
 }
 
 // interval -> interval procedures
@@ -474,7 +491,9 @@ extern "C" int mod_init(SModulFunctions* psModulFunctions) {
     // debug
     Print("Created type interval with id %d\n", intervalID);
 
+    // add additional functions
     psModulFunctions->iiAddCproc("interval.lib", "bounds", FALSE, bounds);
+    psModulFunctions->iiAddCproc("interval.lib", "length", FALSE, length);
 
     return MAX_TOK;
 }
