@@ -874,8 +874,8 @@ EXAMPLE: exclusionTest for intersection of two ellipses"
             if (zeroTest == 1) { B_star = B_star + list(B[i]); };
             if (zeroTest == 0) {
                 //case that box is smaller than the input limitsize
-                if (lengthBox(B[i]) <= limitsize){
-                    B_size = B_size + list(B[i]));
+                if (lengthBox(B[i]) <= limitsize) {
+                    B_size = B_size + list(B[i]);
                 } else {
                     // else split the box and put the smaller boxes to B_prime
                     B_prime = B_prime + splitBox(B[i], I);
