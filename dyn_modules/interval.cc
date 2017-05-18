@@ -210,6 +210,9 @@ interval* intervalScalarMultiply(number a, interval *I) {
         up = nMult(a, I->lower);
     }
 
+    nNormalize(lo);
+    nNormalize(up);
+
     return new interval(lo, up);
 }
 
@@ -239,6 +242,9 @@ interval* intervalMultiply(interval *I, interval *J) {
         nDelete(&nums[i]);
     }
 
+    nNormalize(lo);
+    nNormalize(up);
+
     return new interval(lo, up);
 }
 
@@ -247,6 +253,9 @@ interval* intervalAdd(interval *I, interval *J) {
     lo = nAdd(I->lower, J->lower);
     up = nAdd(I->upper, J->upper);
 
+    nNormalize(lo);
+    nNormalize(up);
+
     return new interval(lo, up);
 }
 
@@ -254,6 +263,9 @@ interval* intervalSubtract(interval *I, interval *J) {
     number lo, up;
     lo = nSub(I->lower, J->upper);
     up = nSub(I->upper, J->lower);
+
+    nNormalize(lo);
+    nNormalize(up);
 
     return new interval(lo, up);
 }
@@ -286,6 +298,7 @@ interval* intervalPower(interval *I, int p) {
             nPower(I->upper, p, &up);
         }
     }
+
     return new interval(lo, up);
 }
 
@@ -521,10 +534,6 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2) {
             return blackboxDefaultOp2(op, result, i1, i2);
         }
     }
-
-    nNormalize(RES->lower);
-    nNormalize(RES->upper);
-
 
     result->rtyp = intervalID;
     result->data = (void*) RES;
@@ -819,7 +828,6 @@ BOOLEAN evalPolyAtBox(leftv result, leftv args) {
     box *B = (box*) args->next->Data();
 
     interval *tmp, *tmpPot, *tmpMonom, *RES = new interval();
-    number c;
 
     while(p != NULL) {
         tmpMonom = new interval(nInit(1));
