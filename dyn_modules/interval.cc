@@ -285,21 +285,35 @@ bool intervalContainsZero(interval *I) {
 }
 
 interval* intervalPower(interval *I, int p) {
-    // TODO rewrite conditions to be more intuitive
     number lo = nInit(0), up = nInit(0);
-    if (p % 2 == 1 || p == 0 || !intervalContainsZero(I) ||
-            nIsZero(I->lower) || nIsZero(I->upper)) {
-        nPower(I->lower, p, &lo);
-        nPower(I->upper, p, &up);
+
+    nPower(I->lower, p, &lo);
+    nPower(I->upper, p, &up);
+
+    // should work now
+    if (p % 2 == 1) {
+        return new interval(lo, up);
+    } else if (p == 0) {
+        nDelete(&lo);
+        nDelete(&up);
+        return new interval(nInit(1));
     } else {
-        if (nGreater(I->lower, I->upper)) {
-            nPower(I->lower, p, &up);
+        number minn, maxn;
+        if (nGreater(lo, up)) {
+            minn = up;
+            maxn = lo;
         } else {
-            nPower(I->upper, p, &up);
+            minn = lo;
+            maxn = up;
+        }
+
+        if (intervalContainsZero(I)) {
+            nDelete(&minn);
+            return new interval(nInit(0), maxn);
+        } else {
+            return new interval(minn, maxn);
         }
     }
-
-    return new interval(lo, up);
 }
 
 /*
