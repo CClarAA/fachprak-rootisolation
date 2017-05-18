@@ -787,7 +787,14 @@ EXAMPLE: tests the above for intersection of ellipses."
         // calculate Bcenter - f(B)^(-1)f(Bcenter)
         box fB = evalIdealAtBox(I, Bcenter);
         fB = Bcenter - (Jinverse * fB);
-
+	
+	// test if fB contained in interior(B)
+	int flag=1;
+	for (i=1; i<=nvars(basering);i++)
+		{
+		if (fB[i][1]<=B[i][1] || fB[i][2]>=B[i][2]){flag=-1;} //not contained in interior
+		}
+	
         def Bint = intersect(B, fB);
 
         // if intersection is emtpy Bint == -1
@@ -795,8 +802,12 @@ EXAMPLE: tests the above for intersection of ellipses."
         B = Bint;
 
         // if equality holds, fB is contained in box B
-        // by paper, fB contains unique solution
-        if (fB == B) { return(1, B) };
+        // by paper, fB contains unique solution 
+        //if (fB == B && flag ==1) { return(1, B);}
+	if (flag ==1) { return(1, B);}
+	
+	//if fB not contained in B, i.e. flag==-1 then return (0,B)
+	if (flag == -1){return(0,B);}
     }
 
     // no condition could be verified
