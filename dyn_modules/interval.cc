@@ -1,74 +1,8 @@
-#include "kernel/mod2.h"
-#include "coeffs/numbers.h"
-#include "Singular/ipid.h"
-#include "Singular/blackbox.h"
-
-struct interval {
-    number lower;
-    number upper;
-
-    interval() {
-        lower = nInit(0);
-        upper = nInit(0);
-    }
-
-    interval(number a) {
-        lower = a;
-        upper = nCopy(a);
-    }
-
-    interval(number a, number b) {
-        lower = a;
-        upper = b;
-    }
-
-    interval(const interval& I) {
-        lower = nCopy(I.lower);
-        upper = nCopy(I.upper);
-    }
-
-    // destructor: triggers on delete
-    ~interval() {
-        nDelete(&lower);
-        nDelete(&upper);
-    }
-};
-
-struct box {
-    interval** intervals;
-
-    box() {
-        int i, n = currRing->N;
-        intervals = (interval**) malloc(n * sizeof(interval*));
-        if (intervals != NULL) {
-            for (i = 0; i < n; i++) {
-                intervals[i] = new interval();
-            }
-        }
-    }
-
-    box(const box& B) {
-        int i, n = currRing->N;
-        intervals = (interval**) malloc(n * sizeof(interval*));
-        if (intervals != NULL) {
-            for (i = 0; i < n; i++) {
-                intervals[i] = new interval(*B.intervals[i]);
-            }
-        }
-    }
-
-    ~box() {
-        int i, n = currRing->N;
-        for (i = 0; i < n; i++) {
-            delete intervals[i];
-        }
-        free((void**) intervals);
-    }
-};
+#include "interval.h"
 
 // type ID
-static int intervalID;
-static int boxID;
+int intervalID;
+int boxID;
 
 /*
  * INTERVAL FUNCTIONS
@@ -622,6 +556,7 @@ BOOLEAN box_Assign(leftv result, leftv args) {
         lists l = (lists) args->Data();
 
         int i, m = lSize(l), n = currRing->N;
+        // minimum
         int M = m > n ? n : m;
 
         for (i = 0; i <= M; i++) {
@@ -813,6 +748,7 @@ BOOLEAN boxSet(leftv result, leftv args) {
 
     box *RES = new box(*B);
 
+    // replace interval, free space
     delete RES->intervals[i-1];
     RES->intervals[i-1] = new interval(*I);
 
