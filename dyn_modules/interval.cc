@@ -1,6 +1,70 @@
 #include "interval.h"
 
-// type ID
+/*
+ * CONSTRUCTORS & DESTRUCTORS
+ */
+
+/* interval */
+
+interval::interval() {
+    lower = nInit(0);
+    upper = nInit(0);
+}
+
+interval::interval(number a) {
+    lower = a;
+    upper = nCopy(a);
+}
+
+interval::interval(number a, number b) {
+    lower = a;
+    upper = b;
+}
+
+interval::interval(const interval &I) {
+    lower = nCopy(I.lower);
+    upper = nCopy(I.upper);
+}
+
+interval::~interval() {
+    nDelete(&lower);
+    nDelete(&upper);
+}
+
+/* box */
+
+box::box() {
+    int i, n = currRing->N;
+    intervals = (interval**) malloc(n * sizeof(interval*));
+    if (intervals != NULL) {
+        for (i = 0; i < n; i++) {
+            intervals[i] = new interval();
+        }
+    }
+}
+
+box::box(const box &B) {
+    int i, n = currRing->N;
+    intervals = (interval**) malloc(n * sizeof(interval*));
+    if (intervals != NULL) {
+        for (i = 0; i < n; i++) {
+            intervals[i] = new interval(*B.intervals[i]);
+        }
+    }
+}
+
+box::~box() {
+    int i, n = currRing->N;
+    for (i = 0; i < n; i++) {
+        delete intervals[i];
+    }
+    free((void**) intervals);
+}
+
+/*
+ * TYPE IDs
+ */
+
 int intervalID;
 int boxID;
 
