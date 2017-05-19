@@ -13,7 +13,7 @@ struct interval {
     interval();
     interval(number);
     interval(number, number);
-    interval(const interval&);
+    interval(interval*);
     ~interval();
 };
 
@@ -21,7 +21,7 @@ struct box {
     interval** intervals;
 
     box();
-    box(const box&);
+    box(box*);
     ~box();
 };
 

@@ -21,9 +21,9 @@ interval::interval(number a, number b) {
     upper = b;
 }
 
-interval::interval(const interval &I) {
-    lower = nCopy(I.lower);
-    upper = nCopy(I.upper);
+interval::interval(interval *I) {
+    lower = nCopy(I->lower);
+    upper = nCopy(I->upper);
 }
 
 interval::~interval() {
@@ -43,12 +43,12 @@ box::box() {
     }
 }
 
-box::box(const box &B) {
+box::box(box* B) {
     int i, n = currRing->N;
     intervals = (interval**) malloc(n * sizeof(interval*));
     if (intervals != NULL) {
         for (i = 0; i < n; i++) {
-            intervals[i] = new interval(*B.intervals[i]);
+            intervals[i] = new interval(B->intervals[i]);
         }
     }
 }
@@ -99,7 +99,7 @@ char* interval_String(blackbox *b, void *d) {
 // TODO may not actually work
 void* interval_Copy(blackbox *b, void *d) {
     interval *i = (interval*) d;
-    interval *inew = new interval(*i);
+    interval *inew = new interval(i);
 
     return (void*) inew;
 }
@@ -563,7 +563,7 @@ void* box_Init(blackbox *b) {
 
 void* box_Copy(blackbox *b, void *d) {
     box *B = (box*) d;
-    return (void*) new box(*B);
+    return (void*) new box(B);
 }
 
 void box_Destroy(blackbox *b, void *d) {
@@ -614,7 +614,7 @@ BOOLEAN box_Assign(leftv result, leftv args) {
 
     if (args->Typ() == boxID) {
         box *B = (box*) args->Data();
-        RES = new box(*B);
+        RES = new box(B);
     } else if (args->Typ() == LIST_CMD) {
         RES = new box();
         lists l = (lists) args->Data();
@@ -630,7 +630,7 @@ BOOLEAN box_Assign(leftv result, leftv args) {
             }
             // delete interval before overwriting it.
             delete RES->intervals[i];
-            RES->intervals[i] = new interval(*((interval*) l->m[i].Data()));
+            RES->intervals[i] = new interval((interval*) l->m[i].Data());
         }
     } else {
         Werror("Input not supported: first argument not box, list, or interval");
@@ -676,7 +676,7 @@ BOOLEAN box_Op2(int op, leftv result, leftv b1, leftv b2) {
             }
 
             result->rtyp = intervalID;
-            result->data = (void*) new interval(*(B1->intervals[i-1]));
+            result->data = (void*) new interval(B1->intervals[i-1]);
             return FALSE;
         }
         case '-':
@@ -810,11 +810,11 @@ BOOLEAN boxSet(leftv result, leftv args) {
         return TRUE;
     }
 
-    box *RES = new box(*B);
+    box *RES = new box(B);
 
     // replace interval, free space
     delete RES->intervals[i-1];
-    RES->intervals[i-1] = new interval(*I);
+    RES->intervals[i-1] = new interval(I);
 
     result->rtyp = boxID;
     result->data = (void*) RES;
