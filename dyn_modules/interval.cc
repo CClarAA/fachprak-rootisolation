@@ -72,13 +72,12 @@ int boxID;
  * INTERVAL FUNCTIONS
  */
 
-void* interval_Init(blackbox *b) {
-    interval *i = new interval();
-    return (void*)i;
+void* interval_Init(blackbox*) {
+    return (void*) new interval();
 }
 
 // convert interval to string
-char* interval_String(blackbox *b, void *d) {
+char* interval_String(blackbox*, void *d) {
     if (d == NULL) {
         // invalid object
         return omStrDup("[?]");
@@ -96,17 +95,14 @@ char* interval_String(blackbox *b, void *d) {
     }
 }
 
-// TODO may not actually work
-void* interval_Copy(blackbox *b, void *d) {
-    interval *i = (interval*) d;
-    interval *inew = new interval(i);
-
-    return (void*) inew;
+void* interval_Copy(blackbox*, void *d) {
+    return (void*) new interval((interval*) d);
 }
 
 // destroy interval
-void interval_Destroy(blackbox *b, void *d) {
-    delete (interval*) d;
+void interval_Destroy(blackbox*, void *d) {
+    if (d != NULL)
+        delete (interval*) d;
 }
 
 // assigning values to intervals
@@ -556,21 +552,20 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2) {
  * BOX FUNCTIONS
  */
 
-void* box_Init(blackbox *b) {
-    box *B = new box();
-    return (void*) B;
+void* box_Init(blackbox*) {
+    return (void*) new box();
 }
 
-void* box_Copy(blackbox *b, void *d) {
-    box *B = (box*) d;
-    return (void*) new box(B);
+void* box_Copy(blackbox*, void *d) {
+    return (void*) new box((box*) d);
 }
 
-void box_Destroy(blackbox *b, void *d) {
-    delete (box*) d;
+void box_Destroy(blackbox*, void *d) {
+    if (d != NULL)
+        delete (box*) d;
 }
 
-char* box_String(blackbox *b, void *d) {
+char* box_String(blackbox*, void *d) {
     blackbox *b_i = getBlackboxStuff(intervalID);
     int i, n = currRing->N;
     box *B = (box*) d;
