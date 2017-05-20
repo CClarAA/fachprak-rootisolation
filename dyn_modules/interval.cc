@@ -1,86 +1,83 @@
-#include "kernel/mod2.h"
-#include "coeffs/numbers.h"
-#include "Singular/ipid.h"
-#include "Singular/blackbox.h"
+#include "interval.h"
 
-struct interval {
-    number lower;
-    number upper;
+/*
+ * CONSTRUCTORS & DESTRUCTORS
+ */
 
-    interval() {
-        lower = nInit(0);
-        upper = nInit(0);
-    }
+/* interval */
 
-    interval(number a) {
-        lower = a;
-        upper = nCopy(a);
-    }
+interval::interval() {
+    lower = nInit(0);
+    upper = nInit(0);
+}
 
-    interval(number a, number b) {
-        lower = a;
-        upper = b;
-    }
+interval::interval(number a) {
+    lower = a;
+    upper = nCopy(a);
+}
 
-    interval(const interval& I) {
-        lower = nCopy(I.lower);
-        upper = nCopy(I.upper);
-    }
+interval::interval(number a, number b) {
+    lower = a;
+    upper = b;
+}
 
-    // destructor: triggers on delete
-    ~interval() {
-        nDelete(&lower);
-        nDelete(&upper);
-    }
-};
+interval::interval(interval *I) {
+    lower = nCopy(I->lower);
+    upper = nCopy(I->upper);
+}
 
-struct box {
-    interval** intervals;
+interval::~interval() {
+    nDelete(&lower);
+    nDelete(&upper);
+}
 
-    box() {
-        int i, n = currRing->N;
-        intervals = (interval**) malloc(n * sizeof(interval*));
-        if (intervals != NULL) {
-            for (i = 0; i < n; i++) {
-                intervals[i] = new interval();
-            }
-        }
-    }
+/* box */
 
-    box(const box& B) {
-        int i, n = currRing->N;
-        intervals = (interval**) malloc(n * sizeof(interval*));
-        if (intervals != NULL) {
-            for (i = 0; i < n; i++) {
-                intervals[i] = new interval(*B.intervals[i]);
-            }
-        }
-    }
-
-    ~box() {
-        int i, n = currRing->N;
+box::box() {
+    int i, n = currRing->N;
+    intervals = (interval**) malloc(n * sizeof(interval*));
+    if (intervals != NULL) {
         for (i = 0; i < n; i++) {
-            delete intervals[i];
+            intervals[i] = new interval();
         }
-        free((void**) intervals);
     }
-};
+}
 
-// type ID
-static int intervalID;
-static int boxID;
+box::box(box* B) {
+    int i, n = currRing->N;
+    intervals = (interval**) malloc(n * sizeof(interval*));
+    if (intervals != NULL) {
+        for (i = 0; i < n; i++) {
+            intervals[i] = new interval(B->intervals[i]);
+        }
+    }
+}
+
+box::~box() {
+    int i, n = currRing->N;
+    for (i = 0; i < n; i++) {
+        delete intervals[i];
+    }
+    free((void**) intervals);
+}
+
+/*
+ * TYPE IDs
+ */
+
+int intervalID;
+int boxID;
 
 /*
  * INTERVAL FUNCTIONS
  */
 
-void* interval_Init(blackbox *b) {
-    interval *i = new interval();
-    return (void*)i;
+void* interval_Init(blackbox*) {
+    return (void*) new interval();
 }
 
 // convert interval to string
-char* interval_String(blackbox *b, void *d) {
+char* interval_String(blackbox*, void *d) {
     if (d == NULL) {
         // invalid object
         return omStrDup("[?]");
@@ -98,17 +95,14 @@ char* interval_String(blackbox *b, void *d) {
     }
 }
 
-// TODO may not actually work
-void* interval_Copy(blackbox *b, void *d) {
-    interval *i = (interval*) d;
-    interval *inew = new interval(*i);
-
-    return (void*) inew;
+void* interval_Copy(blackbox*, void *d) {
+    return (void*) new interval((interval*) d);
 }
 
 // destroy interval
-void interval_Destroy(blackbox *b, void *d) {
-    delete (interval*) d;
+void interval_Destroy(blackbox*, void *d) {
+    if (d != NULL)
+        delete (interval*) d;
 }
 
 // assigning values to intervals
@@ -558,21 +552,20 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2) {
  * BOX FUNCTIONS
  */
 
-void* box_Init(blackbox *b) {
-    box *B = new box();
-    return (void*) B;
+void* box_Init(blackbox*) {
+    return (void*) new box();
 }
 
-void* box_Copy(blackbox *b, void *d) {
-    box *B = (box*) d;
-    return (void*) new box(*B);
+void* box_Copy(blackbox*, void *d) {
+    return (void*) new box((box*) d);
 }
 
-void box_Destroy(blackbox *b, void *d) {
-    delete (box*) d;
+void box_Destroy(blackbox*, void *d) {
+    if (d != NULL)
+        delete (box*) d;
 }
 
-char* box_String(blackbox *b, void *d) {
+char* box_String(blackbox*, void *d) {
     blackbox *b_i = getBlackboxStuff(intervalID);
     int i, n = currRing->N;
     box *B = (box*) d;
@@ -616,12 +609,13 @@ BOOLEAN box_Assign(leftv result, leftv args) {
 
     if (args->Typ() == boxID) {
         box *B = (box*) args->Data();
-        RES = new box(*B);
+        RES = new box(B);
     } else if (args->Typ() == LIST_CMD) {
         RES = new box();
         lists l = (lists) args->Data();
 
         int i, m = lSize(l), n = currRing->N;
+        // minimum
         int M = m > n ? n : m;
 
         for (i = 0; i <= M; i++) {
@@ -631,7 +625,7 @@ BOOLEAN box_Assign(leftv result, leftv args) {
             }
             // delete interval before overwriting it.
             delete RES->intervals[i];
-            RES->intervals[i] = new interval(*((interval*) l->m[i].Data()));
+            RES->intervals[i] = new interval((interval*) l->m[i].Data());
         }
     } else {
         Werror("Input not supported: first argument not box, list, or interval");
@@ -677,7 +671,7 @@ BOOLEAN box_Op2(int op, leftv result, leftv b1, leftv b2) {
             }
 
             result->rtyp = intervalID;
-            result->data = (void*) new interval(*(B1->intervals[i-1]));
+            result->data = (void*) new interval(B1->intervals[i-1]);
             return FALSE;
         }
         case '-':
@@ -811,10 +805,11 @@ BOOLEAN boxSet(leftv result, leftv args) {
         return TRUE;
     }
 
-    box *RES = new box(*B);
+    box *RES = new box(B);
 
+    // replace interval, free space
     delete RES->intervals[i-1];
-    RES->intervals[i-1] = new interval(*I);
+    RES->intervals[i-1] = new interval(I);
 
     result->rtyp = boxID;
     result->data = (void*) RES;
