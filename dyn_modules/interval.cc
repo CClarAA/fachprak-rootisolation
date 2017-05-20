@@ -281,6 +281,7 @@ bool intervalContainsZero(interval *I) {
 interval* intervalPower(interval *I, int p) {
     number lo = nInit(0), up = nInit(0);
 
+    // does this handle memory?
     nPower(I->lower, p, &lo);
     nPower(I->upper, p, &up);
 
@@ -303,10 +304,9 @@ interval* intervalPower(interval *I, int p) {
 
         if (intervalContainsZero(I)) {
             nDelete(&minn);
-            return new interval(nInit(0), maxn);
-        } else {
-            return new interval(minn, maxn);
+            minn = nInit(0);
         }
+        return new interval(minn, maxn);
     }
 }
 
@@ -470,6 +470,12 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2) {
                         return TRUE;
                     }
                 }
+                // handle zero to prevent memory leak (?)
+                if (nIsZero(n)) {
+                    Werror("<interval>/0 not supported");
+                    return TRUE;
+                }
+
                 number nInv = nInvers(n);
                 nDelete(&n);
                 RES = intervalScalarMultiply(nInv, I1);
@@ -591,6 +597,7 @@ BOOLEAN box_Assign(leftv result, leftv args) {
 
     // destroy data of result if it exists
     if (result != NULL && result->Data() != NULL && result->Typ() == boxID) {
+        // TODO can probably handle this better (excluding this makes B=B segfault)
         // "B=B" (same pointers)
         if (result->Data() == args->Data()) {
             return FALSE;
