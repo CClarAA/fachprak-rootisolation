@@ -6,28 +6,6 @@ AUTHORS:    Dominik Bendle
             Clara Petroll
 
 OVERLOADS:
-/*
-// intervals
-[           intervalGet         indexing
-=           intervalAssign      assigning
-==          intervalEqual       equality
-print       intervalPrint       pretty print
-+           intervalAdd         addition
--           intervalNegate      negation (unary)
--           intervalSubtract    subtraction
-*           intervalMultiply    multiplication
-/           intervalDivide      division
-^           intervalPotentiate  potentiation
-*/
-
-// boxes
-=           boxSet              assigning
-[           boxGet              indexing
-==          boxEqual            equality
-print       boxPrint            printing
--           boxSubtract         subraction
-intersect   boxIntersect        intersection
-
 // intervalmatrices
 [           ivmatGet            indexing
 print       ivmatPrint          printing
@@ -37,15 +15,11 @@ det         determinant         determinant
 *           ivmatMultiply       matrix multiplication
 
 PROCEDURES:
-length                  length/size if interval
-bounds                  construct interval for given bounds.
-
 intervalmatrixInit      initialises an interval matrix
 unitMatrix              unit matrix
 applyMatrix             apply matrix to box
 ivmatGaussian           Gaussian elimination on matrices
 
-evalPolyAtBox           evaluate interval extension of polynomial
 exclusionTest           first version of our exclusion test
 ";
 ///////////////////////////////////////////////////////////////////
