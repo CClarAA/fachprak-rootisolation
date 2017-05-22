@@ -152,10 +152,10 @@ example
     splitBox(B,1);
 }
 
-proc boxIsinterior(box A, box B)
-"USAGE: boxIsinterior(A, B), A, B box
+proc boxIsInterior(box A, box B)
+"USAGE: boxIsInterior(A, B), A, B box
 RETURN: 1 if A contained in int(B) else 0
-EXAMPLE: boxIsinterior"
+EXAMPLE: boxIsInterior"
 {
     int n = nvars(basering);
     for (int i=1; i<= n; i++) {
@@ -169,10 +169,10 @@ example
     ring R=0,(x,y,z), lp;
     box A=list(bounds(1,2), bounds(2,3), bounds(1/2,7/2)); A;
     box B1=list(bounds(0,5/2), bounds(1,4), bounds(0,9)); B1;
-    boxIsinterior(A,B1);
+    boxIsInterior(A,B1);
 
     box B2=list(bounds(2,4), bounds(1,4), bounds(0,9)); B2;
-    boxIsinterior(A,B2);
+    boxIsInterior(A,B2);
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -762,15 +762,14 @@ EXAMPLE: tests the above for intersection of ellipses."
         box fB = evalIdealAtBox(I, Bcenter);
         fB = Bcenter - (Jinverse * fB);
 
+        if (boxIsInterior(fB, B)) { return(1, fB); }
+
+        // else intersection is empty or non-trivial
         def Bint = intersect(B, fB);
 
-        // if intersection is emtpy Bint == -1
+        // if intersection is empty Bint == -1
         if (typeof(Bint) == "int") { return(-1, B); }
         B = Bint;
-
-        // if equality holds, fB is contained in box B
-        // by paper, fB contains unique solution
-        if (fB == B) { return(1, B) };
     }
 
     // no condition could be verified
@@ -819,11 +818,21 @@ example
     evalIdealAtBox(I,intervals);
 }
 
-proc exclusionTest(ideal I, box start, number limitsize)
+proc exclusionTest(ideal I, box start, list #)
 "USAGE: exclusion test for roots with interval arithmetic
 RETURN: list of boxes
 EXAMPLE: exclusionTest for intersection of two ellipses"
 {
+    number limitsize;
+    if (size(#) == 0) {
+        limitsize = 0;
+    } else {
+        if (typeof(#[1]) <> "number") {
+            ERROR("optional parameter must be a number");
+        }
+        limitsize = #[1];
+    }
+
     //set of boxes smaller than size
     list B_size;
     //set of boxes which exactly contain one solution
@@ -848,6 +857,7 @@ EXAMPLE: exclusionTest for intersection of two ellipses"
             if (zeroTest == 1) { B_star = B_star + list(B[i]); };
             if (zeroTest == 0) {
                 //case that box is smaller than the input limitsize
+                // remove first case if limitsize == 0?
                 if (lengthBox(B[i]) <= limitsize) {
                     B_size = B_size + list(B[i]);
                 } else {
