@@ -35,7 +35,7 @@ interval::~interval() {
 
 box::box() {
     int i, n = currRing->N;
-    intervals = (interval**) malloc(n * sizeof(interval*));
+    intervals = (interval**) omAlloc0(n * sizeof(interval*));
     if (intervals != NULL) {
         for (i = 0; i < n; i++) {
             intervals[i] = new interval();
@@ -45,7 +45,7 @@ box::box() {
 
 box::box(box* B) {
     int i, n = currRing->N;
-    intervals = (interval**) malloc(n * sizeof(interval*));
+    intervals = (interval**) omAlloc0(n * sizeof(interval*));
     if (intervals != NULL) {
         for (i = 0; i < n; i++) {
             intervals[i] = new interval(B->intervals[i]);
@@ -58,7 +58,7 @@ box::~box() {
     for (i = 0; i < n; i++) {
         delete intervals[i];
     }
-    free((void**) intervals);
+    omFree((void**) intervals);
 }
 
 /*
@@ -512,9 +512,8 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2) {
             I1 = (interval*) i1->Data();
             I2 = (interval*) i2->Data();
 
-            bool isEq = intervalEqual(I1, I2);
             result->rtyp = INT_CMD;
-            result->data = (void*) isEq;
+            result->data = (void*) intervalEqual(I1, I2);
             return FALSE;
         }
         case '[':
@@ -523,24 +522,23 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2) {
                 Werror("syntax: <interval>[<int>]");
                 return TRUE;
             }
+
             interval *I = (interval*) i1->Data();
             int n = (int)(long) i2->Data();
+
             number out;
             if (n == 1) {
                 out = nCopy(I->lower);
-                result->rtyp = NUMBER_CMD;
-                result->data = (void*) out;
-                return FALSE;
-            }
-            if (n == 2) {
+            } else if (n == 2) {
                 out = nCopy(I->upper);
-                result->rtyp = NUMBER_CMD;
-                result->data = (void*) out;
-                return FALSE;
+            } else {
+                Werror("Allowed indices are 1 and 2");
+                return TRUE;
             }
 
-            Werror("Allowed indices are 1 and 2");
-            return TRUE;
+            result->rtyp = NUMBER_CMD;
+            result->data = (void*) out;
+            return FALSE;
         }
         default:
         {
