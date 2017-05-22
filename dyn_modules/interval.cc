@@ -1038,8 +1038,8 @@ BOOLEAN evalPolyAtBox(leftv result, leftv args)
 
 extern "C" int mod_init(SModulFunctions* psModulFunctions)
 {
-    blackbox *b_iv = (blackbox*)omAlloc0(sizeof(blackbox));
-    blackbox *b_bx = (blackbox*)omAlloc0(sizeof(blackbox));
+    blackbox *b_iv = (blackbox*)omAlloc0(sizeof(blackbox)),
+             *b_bx = (blackbox*)omAlloc0(sizeof(blackbox));
 
     b_iv->blackbox_Init    = interval_Init;
     b_iv->blackbox_Copy    = interval_Copy;
@@ -1068,7 +1068,8 @@ extern "C" int mod_init(SModulFunctions* psModulFunctions)
     psModulFunctions->iiAddCproc("interval.lib", "bounds", FALSE, bounds);
     psModulFunctions->iiAddCproc("interval.lib", "length", FALSE, length);
     psModulFunctions->iiAddCproc("interval.lib", "boxSet", FALSE, boxSet);
-    psModulFunctions->iiAddCproc("interval.lib", "evalPolyAtBox", FALSE, evalPolyAtBox);
+    psModulFunctions->iiAddCproc("interval.lib", "evalPolyAtBox", FALSE,
+        evalPolyAtBox);
 
     return MAX_TOK;
 }

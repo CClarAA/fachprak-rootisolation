@@ -38,3 +38,4 @@ bool intervalContainsZero(interval*);
 extern "C" int mod_init(SModulFunctions*);
 
 #endif
+/* INTERVAL_H */
