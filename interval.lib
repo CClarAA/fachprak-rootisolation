@@ -6,28 +6,6 @@ AUTHORS:    Dominik Bendle
             Clara Petroll
 
 OVERLOADS:
-/*
-// intervals
-[           intervalGet         indexing
-=           intervalAssign      assigning
-==          intervalEqual       equality
-print       intervalPrint       pretty print
-+           intervalAdd         addition
--           intervalNegate      negation (unary)
--           intervalSubtract    subtraction
-*           intervalMultiply    multiplication
-/           intervalDivide      division
-^           intervalPotentiate  potentiation
-*/
-
-// boxes
-=           boxSet              assigning
-[           boxGet              indexing
-==          boxEqual            equality
-print       boxPrint            printing
--           boxSubtract         subraction
-intersect   boxIntersect        intersection
-
 // intervalmatrices
 [           ivmatGet            indexing
 print       ivmatPrint          printing
@@ -37,15 +15,11 @@ det         determinant         determinant
 *           ivmatMultiply       matrix multiplication
 
 PROCEDURES:
-length                  length/size if interval
-bounds                  construct interval for given bounds.
-
 intervalmatrixInit      initialises an interval matrix
 unitMatrix              unit matrix
 applyMatrix             apply matrix to box
 ivmatGaussian           Gaussian elimination on matrices
 
-evalPolyAtBox           evaluate interval extension of polynomial
 exclusionTest           first version of our exclusion test
 ";
 ///////////////////////////////////////////////////////////////////
@@ -76,7 +50,10 @@ EXAMPLE: compute length of boxes"
     number maximum = 0;
     int n = nvars(basering);
 
-    for (int i=1; i <= n; i++) { maximum = max(maximum, length(B[i])); }
+    for (int i=1; i <= n; i++)
+    {
+        maximum = max(maximum, length(B[i]));
+    }
 
     return(maximum);
 }
@@ -103,7 +80,8 @@ EXAMPLE: compute center box"
     list C;
     int i;
 
-    for (i = 1; i <= n; i++) {
+    for (i = 1; i <= n; i++)
+    {
         C[i] = interval((M[i][1] + M[i][2])/2);
     }
 
@@ -130,7 +108,8 @@ EXAMPLE: split two-dimensional interval into two"
     int imax = 1;
     int n = nvars(basering);
 
-    for (int i = 2; i <= n; i++) {
+    for (int i = 2; i <= n; i++)
+    {
         if (length(B[i]) > length(B[imax])) { imax = i; }
     }
 
@@ -139,11 +118,13 @@ EXAMPLE: split two-dimensional interval into two"
     box intersection;
     ideal Inew;
 
-    while(1) {
+    while(1)
+    {
         mean = ratio * B[imax][1] + (1 - ratio) * B[imax][2];
 
         intersection = evalIdealAtBox(I, boxSet(B, imax, interval(mean)));
-        for (i = 1; i <= n; i++) {
+        for (i = 1; i <= n; i++)
+        {
             // check if any interval does not contain zero
             if (intersection[i][1]*intersection[i][2] > 0) { break; }
         }
@@ -157,7 +138,11 @@ EXAMPLE: split two-dimensional interval into two"
         ratio = ratio * 9/10;
 
         // make sure algorithm terminates, after taking too many steps
-        if ( ratio < 1/100 ) { print("splitBox took too long"); break; }
+        if ( ratio < 1/100 )
+        {
+            print("splitBox took too long");
+            break;
+        }
     }
 
     // now split boxes
@@ -178,13 +163,14 @@ example
     splitBox(B,1);
 }
 
-proc boxIsinterior(box A, box B)
-"USAGE: boxIsinterior(A, B), A, B box
+proc boxIsInterior(box A, box B)
+"USAGE: boxIsInterior(A, B), A, B box
 RETURN: 1 if A contained in int(B) else 0
-EXAMPLE: boxIsinterior"
+EXAMPLE: boxIsInterior"
 {
     int n = nvars(basering);
-    for (int i=1; i<= n; i++) {
+    for (int i=1; i<= n; i++)
+    {
         if (A[i][1] <= B[i][1] || A[i][2] >= B[i][2]){return(0);}
     }
     return(1);
@@ -193,12 +179,12 @@ example
 {
     echo=2;
     ring R=0,(x,y,z), lp;
-    box A=list(bounds(1,2), bounds(2,3), bounds(1/2,7/2)); A;
-    box B1=list(bounds(0,5/2), bounds(1,4), bounds(0,9)); B1;
-    boxIsinterior(A,B1);
+    box A = list(bounds(1,2), bounds(2,3), bounds(1/2,7/2)); A;
+    box B1 = list(bounds(0,5/2), bounds(1,4), bounds(0,9)); B1;
+    boxIsInterior(A,B1);
 
-    box B2=list(bounds(2,4), bounds(1,4), bounds(0,9)); B2;
-    boxIsinterior(A,B2);
+    box B2 = list(bounds(2,4), bounds(1,4), bounds(0,9)); B2;
+    boxIsInterior(A,B2);
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -215,9 +201,11 @@ EXAMPLE: initialises an interval matrix"
     int i, j;
     interval z = 0;
 
-    for (i = 1; i <= numrows; i++) {
+    for (i = 1; i <= numrows; i++)
+    {
         A.rows[i] = list();
-        for (j=1; j <= numcols; j++) {
+        for (j=1; j <= numcols; j++)
+        {
             A.rows[i][j] = z;
         }
     }
@@ -270,17 +258,26 @@ RETURN: interval matrix containing intervals L in row major order
 EXAMPLE: builds matrix from intervals"
 {
     list intervals;
-    if (size(#) == 1 && typeof(#[1]) == "list") { intervals = #[1]; }
-    else                                        { intervals = #;    }
+    if (size(#) == 1 && typeof(#[1]) == "list")
+    {
+        intervals = #[1];
+    }
+    else
+    {
+        intervals = #;
+    }
 
     int ivsize = size(intervals);
     int i, j;
     int counter = 1;
     ivmat A = ivmatInit(m, n);
 
-    for (i = 1; i <= m; i++) {
-        for (j = 1; j <= n; j++) {
-            if (counter <= ivsize) {
+    for (i = 1; i <= m; i++)
+    {
+        for (j = 1; j <= n; j++)
+        {
+            if (counter <= ivsize)
+            {
                 A.rows[i][j] = intervals[counter];
                 counter++;
             }
@@ -305,7 +302,8 @@ RETURN: nothing
 EXAMPLE: prints a matrix"
 {
     int m = nrows(A);
-    for (int i = 1; i <= m; i++) {
+    for (int i = 1; i <= m; i++)
+    {
         string(A.rows[i]);
     }
 }
@@ -353,7 +351,8 @@ RETURN: diagonal nxn-matrix E where E[i][i] == I for all 1 <= i <= n
 EXAMPLE: create diagonal matrix"
 {
     ivmat E = ivmatInit(n, n);
-    for (int i = 1; i <= n; i++) {
+    for (int i = 1; i <= n; i++)
+    {
         E.rows[i][i] = I;
     }
     return(E);
@@ -386,10 +385,14 @@ RETURN: determinant calculated by standard interval arithmetic
 EXAMPLE: calculates a determinant"
 {
     int n = ncols(A);
-    if (n == 1) { return(A[1][1]); }
+    if (n == 1)
+    {
+        return(A[1][1]);
+    }
 
     interval I = 0;
-    for (int i = 1; i <= n; i++) {
+    for (int i = 1; i <= n; i++)
+    {
         I = I + A[1][i] * cofactor(A, 1, i);
     }
     return(I);
@@ -422,8 +425,10 @@ EXAMPLE: compute cofactors"
 
     // create m-1 x n-1 submatrix (minor) without row i, column j
     int k, l;
-    for (k = 1; k < n; k++) {
-        for (l = 1; l < n; l++) {
+    for (k = 1; k < n; k++)
+    {
+        for (l = 1; l < n; l++)
+        {
             M.rows[k][l] = A[k + (k>=i)][l + (l>=j)];
         }
     }
@@ -453,8 +458,10 @@ EXAMPLE: compute adjunct matrix"
     ivmat adj = ivmatInit(n, n);
 
     int i, j;
-    for (i = 1; i <= n; i++) {
-        for (j = 1; j <= n; j++) {
+    for (i = 1; i <= n; i++)
+    {
+        for (j = 1; j <= n; j++)
+        {
             adj.rows[i][j] = cofactor(A, j, i);
         }
     }
@@ -486,8 +493,10 @@ EXAMPLE: compute center matrix"
     matrix C[m][n];
     int i, j;
 
-    for (i = 1; i <= m; i++) {
-        for (j = 1; j <= n; j++) {
+    for (i = 1; i <= m; i++)
+    {
+        for (j = 1; j <= n; j++)
+        {
             C[i, j] = (M[i][j][1] + M[i][j][2])/2;
         }
     }
@@ -517,8 +526,10 @@ EXAMPLE: compute radius matrix"
     matrix C[m][n];
     int i, j;
 
-    for (i = 1; i <= m; i++) {
-        for (j = 1; j <= n; j++) {
+    for (i = 1; i <= m; i++)
+    {
+        for (j = 1; j <= n; j++)
+        {
             C[i, j] = length(M[i][j])/2;
         }
     }
@@ -546,16 +557,22 @@ EXAMPLE: multiply matrices"
     int n = ncols(B);
     int p = ncols(A);
 
-    if (p <> nrows(B)) { ERROR("Matrices have wrong dimensions!"); }
+    if (p <> nrows(B))
+    {
+        ERROR("Matrices have wrong dimensions!");
+    }
 
     ivmat C = ivmatInit(m, n);
     int i, j, k;
     interval I;
 
-    for (i = 1; i <= m; i++) {
-        for (j = 1; j <= n; j++) {
+    for (i = 1; i <= m; i++)
+    {
+        for (j = 1; j <= n; j++)
+        {
             I = 0;
-            for (k = 1; k <= p; k++) {
+            for (k = 1; k <= p; k++)
+            {
                 I = I + A[i][k] * B[k][j];
             }
             C.rows[i][j] = I;
@@ -594,23 +611,32 @@ RETURN: 0 if A not invertible, 1,Ainv if A invertible
 EXAMPLE: some matrix"
 {
     int n = nrows(A);
-    if (n <> ncols(A)) { ERROR("Matrix non-square"); }
+    if (n <> ncols(A))
+    {
+        ERROR("Matrix non-square");
+    }
 
     ivmat Ainv = unitMatrix(n);
     list tmp;
     interval TMP;
 
     int i, j, pos;
-    for (pos = 1; pos <= n; pos++) {
+    for (pos = 1; pos <= n; pos++)
+    {
         i = pos;
 
         // get non-zero interval on diagonal
-        while(A[i][pos][1] * A[i][pos][2] <= 0) {
+        while(A[i][pos][1] * A[i][pos][2] <= 0)
+        {
             i++;
             // if no non-zero intervals exist, then matrix must be singular
-            if (i > n) { return(0); }
+            if (i > n)
+            {
+                return(0);
+            }
         }
-        if (i <> pos) {
+        if (i <> pos)
+        {
             tmp = A.rows[i];
             A.rows[i] = A.rows[pos];
             A.rows[pos] = tmp;
@@ -624,17 +650,21 @@ EXAMPLE: some matrix"
         TMP = A[pos][pos];
         A.rows[pos][pos] = interval(1);
 
-        for (j = 1; j <= n; j++) {
+        for (j = 1; j <= n; j++)
+        {
             if (pos <> j) { A.rows[pos][j] = A[pos][j]/TMP; }
             Ainv.rows[pos][j] = Ainv[pos][j]/TMP;
         }
 
         // clear entries above and below
-        for (i = 1; i <= n; i++) {
-            if (i <> pos) {
+        for (i = 1; i <= n; i++)
+        {
+            if (i <> pos)
+            {
                 TMP = A[i][pos];
                 A.rows[i][pos] = interval(0);
-                for (j = 1; j <= n; j++) {
+                for (j = 1; j <= n; j++)
+                {
                     if (j <> pos) { A.rows[i][j] = A[i][j] - A[pos][j]*TMP; }
                     Ainv.rows[i][j] = Ainv[i][j] - Ainv[pos][j]*TMP;
                 }
@@ -672,15 +702,20 @@ EXAMPLE: apply matrix to box"
 {
     int n = nvars(basering);
 
-    if (ncols(A) <> n || nrows(A) <> n) { ERROR("Matrix has wrong dimensions"); }
+    if (ncols(A) <> n || nrows(A) <> n)
+    {
+        ERROR("Matrix has wrong dimensions");
+    }
 
     int i, j;
     list result;
     interval tmp;
 
-    for (i = 1; i <= n; i++) {
+    for (i = 1; i <= n; i++)
+    {
         tmp = 0;
-        for (j = 1; j <= n; j++) {
+        for (j = 1; j <= n; j++)
+        {
             tmp = tmp + A[i][j] * b[j];
         }
         result[i] = tmp;
@@ -710,8 +745,14 @@ proc ivmatMultiplyGeneral(ivmat A, B)
 RETURN: usual matrix product where box is a nx1 matrix
 EXAMPLE: multiply matrices with matrices and boxes"
 {
-    if (typeof(B) == "ivmat") { return(ivmatMultiply(A, B)); }
-    if (typeof(B) == "box")   { return(applyMatrix(A, B)); }
+    if (typeof(B) == "ivmat")
+    {
+        return(ivmatMultiply(A, B));
+    }
+    if (typeof(B) == "box")
+    {
+        return(applyMatrix(A, B));
+    }
     ERROR("Type not supported.");
 }
 example
@@ -736,8 +777,10 @@ EXAMPLE: evalate Jacobian at box"
 
     int i, j;
 
-    for (i = 1; i <= m; i++) {
-        for (j = 1; j <=n ; j++) {
+    for (i = 1; i <= m; i++)
+    {
+        for (j = 1; j <=n ; j++)
+        {
             M.rows[i][j] = evalPolyAtBox(J[i,j], B);
         }
     }
@@ -765,14 +808,19 @@ EXAMPLE: tests the above for intersection of ellipses."
 
     interval tmp;
 
-    for (i = 1; i <= ncols(I); i++) {
+    for (i = 1; i <= ncols(I); i++)
+    {
         tmp = evalPolyAtBox(I[i], B);
         // check if 0 contained in every interval
         // return -1 if not
-        if (tmp[1]*tmp[2] > 0) { return(-1, B); }
+        if (tmp[1]*tmp[2] > 0)
+        {
+            return(-1, B);
+        }
     }
 
-    if (ncols(I) == numvars) {
+    if (ncols(I) == numvars)
+    {
         // calculate center as box of intervals instead of numbers
         // so we may reuse other procedures
         box Bcenter = boxCenter(B);
@@ -781,24 +829,30 @@ EXAMPLE: tests the above for intersection of ellipses."
         list inverse = ivmatGaussian(J);
 
         // only continue if J is invertible , i.e. J contains no singular matrix
-        if (!inverse[1]) { return(0, B); }
+        if (!inverse[1])
+        {
+            return(0, B);
+        }
         ivmat Jinverse = inverse[2];
 
         // calculate Bcenter - f(B)^(-1)f(Bcenter)
         box fB = evalIdealAtBox(I, Bcenter);
         fB = Bcenter - (Jinverse * fB);
-	
+
+        if (boxIsInterior(fB, B))
+        {
+            return(1, fB);
+        }
+
+        // else intersection is empty or non-trivial
         def Bint = intersect(B, fB);
 
-        // if intersection is emtpy Bint == -1
-        if (typeof(Bint) == "int") { return(-1, B); }
-	int interior=boxIsinterior(fB,B);
+        // if intersection is empty Bint == -1
+        if (typeof(Bint) == "int")
+        {
+            return(-1, B);
+        }
         B = Bint;
-
-        // by paper, fB contains unique solution if interior==1
-
-	if (interior ==1) { return(1, B);}
-	
     }
 
     // no condition could be verified
@@ -847,11 +901,25 @@ example
     evalIdealAtBox(I,intervals);
 }
 
-proc exclusionTest(ideal I, box start, number limitsize)
+proc exclusionTest(ideal I, box start, list #)
 "USAGE: exclusion test for roots with interval arithmetic
 RETURN: list of boxes
 EXAMPLE: exclusionTest for intersection of two ellipses"
 {
+    number limitsize;
+    if (size(#) == 0)
+    {
+        limitsize = 0;
+    }
+    else
+    {
+        if (typeof(#[1]) <> "number")
+        {
+            ERROR("optional parameter must be a number");
+        }
+        limitsize = #[1];
+    }
+
     //set of boxes smaller than size
     list B_size;
     //set of boxes which exactly contain one solution
@@ -864,21 +932,31 @@ EXAMPLE: exclusionTest for intersection of two ellipses"
     int i;
     int zeroTest;
 
-    while (size(B) <> 0) {
+    while (size(B) <> 0)
+    {
         // B_prime is empty set
         B_prime = list();
 
-        for (i=1; i<=size(B); i++) {
+        for (i=1; i<=size(B); i++)
+        {
             //case that maybe there is a root in the box
             zeroTest, B[i] = testPolyBox(I,B[i]);
 
             // maybe refine boxes in Bstar in later steps
-            if (zeroTest == 1) { B_star = B_star + list(B[i]); };
-            if (zeroTest == 0) {
+            if (zeroTest == 1)
+            {
+                B_star = B_star + list(B[i]);
+            };
+            if (zeroTest == 0)
+            {
                 //case that box is smaller than the input limitsize
-                if (lengthBox(B[i]) <= limitsize) {
+                // remove first case if limitsize == 0?
+                if (lengthBox(B[i]) <= limitsize)
+                {
                     B_size = B_size + list(B[i]);
-                } else {
+                }
+                else
+                {
                     // else split the box and put the smaller boxes to B_prime
                     B_prime = B_prime + splitBox(B[i], I);
                 }

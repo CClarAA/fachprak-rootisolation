@@ -1,12 +1,10 @@
 #ifndef INTERVAL_H
 #define INTERVAL_H
 
-#include "kernel/mod2.h"
-#include "coeffs/numbers.h"
 #include "Singular/ipid.h"
-#include "Singular/blackbox.h"
 
-struct interval {
+struct interval
+{
     number lower;
     number upper;
 
@@ -17,7 +15,8 @@ struct interval {
     ~interval();
 };
 
-struct box {
+struct box
+{
     interval** intervals;
 
     box();
@@ -39,3 +38,4 @@ bool intervalContainsZero(interval*);
 extern "C" int mod_init(SModulFunctions*);
 
 #endif
+/* INTERVAL_H */
