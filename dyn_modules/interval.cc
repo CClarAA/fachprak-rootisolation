@@ -133,17 +133,6 @@ BOOLEAN interval_Assign(leftv result, leftv args)
     assume(result->Typ() == intervalID);
     interval *RES;
 
-    // destroy data of result if it exists
-    if (result != NULL && result->Data() != NULL)
-    {
-        // "I=I" (same pointers)
-        if (result->Data() == args->Data())
-        {
-            return FALSE;
-        }
-        delete (interval*) result->Data();
-    }
-
     /*
      * Allow assignments of the form
      *  I = a,
@@ -200,6 +189,12 @@ BOOLEAN interval_Assign(leftv result, leftv args)
         }
 
         RES = new interval(n1, n2);
+    }
+
+    // destroy data of result if it exists
+    if (result->Data() != NULL)
+    {
+        delete (interval*) result->Data();
     }
 
     if (result->rtyp == IDHDL)
@@ -407,12 +402,6 @@ interval* intervalPower(interval *I, int p)
 BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2)
 {
     interval *RES;
-
-    // destroy data of result if it exists
-    if (result->Data() != NULL)
-    {
-        delete (interval*) result->Data();
-    }
 
     switch(op)
     {
@@ -639,6 +628,13 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2)
                 return TRUE;
             }
 
+            // delete number in result
+            if (result != NULL && result->Data() != NULL)
+            {
+                number r = (number) result->Data();
+                nDelete(&r);
+            }
+
             result->rtyp = NUMBER_CMD;
             result->data = (void*) out;
             return FALSE;
@@ -648,6 +644,12 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2)
             // use default error
             return blackboxDefaultOp2(op, result, i1, i2);
         }
+    }
+
+    // destroy data of result if it exists
+    if (result->Data() != NULL)
+    {
+        delete (interval*) result->Data();
     }
 
     result->rtyp = intervalID;
@@ -703,18 +705,6 @@ BOOLEAN box_Assign(leftv result, leftv args)
     assume(result->Typ() == boxID);
     box *RES;
 
-    // destroy data of result if it exists
-    if (result != NULL && result->Data() != NULL && result->Typ() == boxID)
-    {
-        // TODO can probably handle this better (excluding this makes B=B segfault)
-        // "B=B" (same pointers)
-        if (result->Data() == args->Data())
-        {
-            return FALSE;
-        }
-        delete (box*) result->Data();
-    }
-
     /*
      * Allow assignments of the form
      *
@@ -754,6 +744,12 @@ BOOLEAN box_Assign(leftv result, leftv args)
     {
         Werror("Input not supported: first argument not box, list, or interval");
         return TRUE;
+    }
+
+    // destroy data of result if it exists
+    if (result != NULL && result->Data() != NULL)
+    {
+        delete (box*) result->Data();
     }
 
     if (result->rtyp == IDHDL)
@@ -804,6 +800,12 @@ BOOLEAN box_Op2(int op, leftv result, leftv b1, leftv b2)
                 return TRUE;
             }
 
+            // delete data of result
+            if (result->Data() != NULL)
+            {
+                delete (interval*) result->Data();
+            }
+
             result->rtyp = intervalID;
             result->data = (void*) new interval(B1->intervals[i-1]);
             return FALSE;
@@ -826,6 +828,11 @@ BOOLEAN box_Op2(int op, leftv result, leftv b1, leftv b2)
             {
                 delete RES->intervals[i];
                 RES->intervals[i] = intervalSubtract(B1->intervals[i], B2->intervals[i]);
+            }
+
+            if (result->Data() != NULL)
+            {
+                delete (box*) result->Data();
             }
 
             result->rtyp = boxID;
@@ -925,6 +932,11 @@ BOOLEAN box_OpM(int op, leftv result, leftv args)
                 RES->intervals[i] = new interval(nCopy(lowerb[i]), nCopy(upperb[i]));
             }
 
+            if (result->Data() != NULL && result->Typ() == boxID)
+            {
+                delete (box*) result->Data();
+            }
+
             result->rtyp = boxID;
             result->data = (void*) RES;
             return FALSE;
@@ -937,10 +949,6 @@ BOOLEAN box_OpM(int op, leftv result, leftv args)
 BOOLEAN boxSet(leftv result, leftv args)
 {
     assume(result->Typ() == boxID);
-    if (result != NULL || result->Data() != NULL)
-    {
-        delete (box*) result->Data();
-    }
 
     if (args == NULL || args->Typ() != boxID ||
         args->next == NULL || args->next->Typ() != INT_CMD ||
@@ -967,6 +975,11 @@ BOOLEAN boxSet(leftv result, leftv args)
     delete RES->intervals[i-1];
     RES->intervals[i-1] = new interval(I);
 
+    if (result->Data() != NULL)
+    {
+        delete (box*) result->Data();
+    }
+
     result->rtyp = boxID;
     result->data = (void*) RES;
     return FALSE;
@@ -979,10 +992,6 @@ BOOLEAN boxSet(leftv result, leftv args)
 BOOLEAN evalPolyAtBox(leftv result, leftv args)
 {
     assume(result->Typ() == intervalID);
-    if (result->Data() != NULL)
-    {
-        delete (box*) result->Data();
-    }
 
     if (args == NULL || args->Typ() != POLY_CMD ||
             args->next == NULL || args->next->Typ() != boxID)
@@ -1025,6 +1034,11 @@ BOOLEAN evalPolyAtBox(leftv result, leftv args)
         RES = tmp;
 
         p = p->next;
+    }
+
+    if (result->Data() != NULL)
+    {
+        delete (box*) result->Data();
     }
 
     result->rtyp = intervalID;
