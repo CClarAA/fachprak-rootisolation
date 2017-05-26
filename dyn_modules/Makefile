@@ -21,5 +21,5 @@ interval.so: interval.o
 	libtool -dynamic -twolevel_namespace -weak_reference_mismatches weak -undefined dynamic_lookup -o $@ $^
 
 interval.o: interval.cc interval.h
-	$(CC) -shared -DDYNAMIC_VERSION -fPIC `libsingular-config --cflags` $< -o $@
+	$(CC) -shared -DDYNAMIC_VERSION -fPIC `libsingular-config --cflags` -O -c $< -o $@
 endif
