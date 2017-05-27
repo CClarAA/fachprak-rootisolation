@@ -297,9 +297,8 @@ interval* intervalMultiply(interval *I, interval *J)
 
 interval* intervalAdd(interval *I, interval *J)
 {
-    number lo, up;
-    lo = nAdd(I->lower, J->lower);
-    up = nAdd(I->upper, J->upper);
+    number lo = nAdd(I->lower, J->lower),
+           up = nAdd(I->upper, J->upper);
 
     nNormalize(lo);
     nNormalize(up);
@@ -309,9 +308,8 @@ interval* intervalAdd(interval *I, interval *J)
 
 interval* intervalSubtract(interval *I, interval *J)
 {
-    number lo, up;
-    lo = nSub(I->lower, J->upper);
-    up = nSub(I->upper, J->lower);
+    number lo = nSub(I->lower, J->upper),
+           up = nSub(I->upper, J->lower);
 
     nNormalize(lo);
     nNormalize(up);
@@ -337,9 +335,14 @@ bool intervalContainsZero(interval *I)
 
 interval* intervalPower(interval *I, int p)
 {
-    number lo = nInit(0), up = nInit(0);
+    if (p == 0)
+    {
+        return new interval(nInit(1));
+    }
 
-    // does this handle memory?
+    // no initialisation required (?)
+    number lo, up;
+
     nPower(I->lower, p, &lo);
     nPower(I->upper, p, &up);
 
@@ -348,32 +351,23 @@ interval* intervalPower(interval *I, int p)
     {
         return new interval(lo, up);
     }
-    else if (p == 0)
-    {
-        nDelete(&lo);
-        nDelete(&up);
-        return new interval(nInit(1));
-    }
     else
     {
-        number minn, maxn;
+        // perform pointer swap if necessary
+        number tmp;
         if (nGreater(lo, up))
         {
-            minn = up;
-            maxn = lo;
-        }
-        else
-        {
-            minn = lo;
-            maxn = up;
+            tmp = up;
+            up = lo;
+            lo = tmp;
         }
 
         if (intervalContainsZero(I))
         {
-            nDelete(&minn);
-            minn = nInit(0);
+            nDelete(&lo);
+            lo = nInit(0);
         }
-        return new interval(minn, maxn);
+        return new interval(lo, up);
     }
 }
 
@@ -435,8 +429,9 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2)
         }
         case '*':
         {
-            if (i1->Typ() == intervalID && i2->Typ() == intervalID)
+            if (i1->Typ() == i2->Typ())
             {
+                // both must be intervals
                 interval *I1, *I2;
                 I1 = (interval*) i1->Data();
                 I2 = (interval*) i2->Data();
@@ -450,11 +445,13 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2)
                 leftv iscalar, iinterv;
                 if (i1->Typ() != intervalID)
                 {
+                    // i1 is scalar
                     iscalar = i1;
                     iinterv = i2;
                 }
                 else
                 {
+                    // i2 is scalar
                     iscalar = i2;
                     iinterv = i1;
                 }
@@ -504,7 +501,6 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2)
                 {
                     interval *I1 = (interval*) i1->Data();
                     RES = intervalMultiply(I1, I2inv);
-                    break;
                 }
                 else
                 {
@@ -525,6 +521,7 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2)
                         default:
                         {
                             Werror("first argument not int/number/interval");
+                            delete I2inv;
                             return TRUE;
                         }
                     }
@@ -733,6 +730,7 @@ BOOLEAN box_Assign(leftv result, leftv args)
             if (l->m[i].Typ() != intervalID)
             {
                 Werror("list contains non-intervals");
+                delete RES;
                 return TRUE;
             }
             // delete interval before overwriting it.
@@ -822,6 +820,7 @@ BOOLEAN box_Op2(int op, leftv result, leftv b1, leftv b2)
             }
 
             box *B2 = (box*) b2->Data();
+            // maybe try to skip this initialisation
             RES = new box();
             int i;
             for (i = 0; i < n; i++)
@@ -993,12 +992,15 @@ BOOLEAN evalPolyAtBox(leftv result, leftv args)
 {
     assume(result->Typ() == intervalID);
 
+#ifndef SING_NDEBUG
     if (args == NULL || args->Typ() != POLY_CMD ||
-            args->next == NULL || args->next->Typ() != boxID)
+        args->next == NULL || args->next->Typ() != boxID ||
+        args->next->next != NULL)
     {
         Werror("syntax: evalPolyAtBox(<poly>, <box>)");
         return TRUE;
     }
+#endif
 
     int i, pot, n = currRing->N;
     poly p = (poly) args->Data();
