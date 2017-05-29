@@ -991,4 +991,64 @@ example
     size(result[2]);
 }
 
+proc exclusionTestGroebner(ideal I, box start, list #)  //im Moment geht das nur mit eingegebener eliminationsordnung
+"USAGE: exclusiontest first for only one variable (using elimination ordering lp) and then use good starting boxes
+RETURN: list of boxes
+EXAMPLE: exclusionTestGroebner for intersection of two ellipses"
+{
+	number limitsize;
+    if (size(#) == 0)
+    {
+        limitsize = 0;
+    }
+    else
+    {
+        if (typeof(#[1]) <> "number")
+        {
+            ERROR("optional parameter must be a number");
+        }
+        limitsize = #[1];
+    }
+    
+    if (nvars(basering)<3){return(exclusionTest(I,start, #));}
+    
+    // compute reduced groebnerbasis for the ideal I
+    option (redSB);
+    ideal Groeb=groebner(I);  //first element in groebner basis only depends on 
+    
+	ring R1=basering;
+	poly GroebnerHelp=Groeb[1];
+	GroebnerHelp=subst(GroebnerHelp,var(nvars(basering)), var(1));
+	//GroebnerHelp;
+	//R1;
+	//nvars(R1);
+	//varstr(R1,nvars(R1));
+	interval HelpInterval=start[nvars(basering)];
+	ring R2=0,var(nvars(R1)),lp;
+	
+	//change to ring with only one variable
+	setring(R2);
+	poly f=fetch(R1,GroebnerHelp);
+	ideal HelpIdeal=f;
+	
+	nvars(R1);
+	HelpInterval;
+	
+	box HelpBox=list(HelpInterval);
+	list HelpBoxes=exclusionTest(HelpIdeal, HelpBox);  
+	
+	//change ring back to starting ring
+	setring(R1);
+	list result;
+	list extest;
+	int l=nvars(R1);
+	for(int i=1,i<= size(HelpBoxes), i++)
+		{
+		extest=exclusionTest(I,boxSet(start, l, Helpboxes[i]));
+		extest;
+		result=result + extest[2];
+		}
+	return(result);
+
+}
 // vim: ft=singular
