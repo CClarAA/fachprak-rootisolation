@@ -7,6 +7,7 @@ struct interval
 {
     number lower;
     number upper;
+    ring R;
 
     interval();
     interval(number);
@@ -18,6 +19,7 @@ struct interval
 struct box
 {
     interval** intervals;
+    ring R;
 
     box();
     box(box*);

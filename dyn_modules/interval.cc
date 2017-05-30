@@ -13,37 +13,47 @@ interval::interval()
 {
     lower = nInit(0);
     upper = nInit(0);
+    R = currRing;
+    (R->ref)++;
 }
 
 interval::interval(number a)
 {
     lower = a;
     upper = nCopy(a);
+    R = currRing;
+    (R->ref)++;
 }
 
 interval::interval(number a, number b)
 {
     lower = a;
     upper = b;
+    R = currRing;
+    (R->ref)++;
 }
 
 interval::interval(interval *I)
 {
     lower = nCopy(I->lower);
     upper = nCopy(I->upper);
+    R = currRing;
+    (R->ref)++;
 }
 
 interval::~interval()
 {
     nDelete(&lower);
     nDelete(&upper);
+    (R->ref)--;
 }
 
 /* box */
 
 box::box()
 {
-    int i, n = currRing->N;
+    R = currRing;
+    int i, n = R->N;
     intervals = (interval**) omAlloc0(n * sizeof(interval*));
     if (intervals != NULL)
     {
@@ -52,11 +62,13 @@ box::box()
             intervals[i] = new interval();
         }
     }
+    (R->ref)++;
 }
 
 box::box(box* B)
 {
-    int i, n = currRing->N;
+    R = currRing;
+    int i, n = R->N;
     intervals = (interval**) omAlloc0(n * sizeof(interval*));
     if (intervals != NULL)
     {
@@ -65,16 +77,18 @@ box::box(box* B)
             intervals[i] = new interval(B->intervals[i]);
         }
     }
+    (R->ref)++;
 }
 
 box::~box()
 {
-    int i, n = currRing->N;
+    int i, n = R->N;
     for (i = 0; i < n; i++)
     {
         delete intervals[i];
     }
     omFree((void**) intervals);
+    (R->ref)--;
 }
 
 /*
@@ -208,8 +222,8 @@ BOOLEAN interval_Assign(leftv result, leftv args)
         result->rtyp = intervalID;
         result->data = (void*) RES;
     }
-    args->CleanUp();
 
+    args->CleanUp();
     return FALSE;
 }
 
@@ -462,7 +476,7 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2)
                     case NUMBER_CMD:
                         { n = nCopy((number) iscalar->Data()); break; }
                     default:
-                        { Werror("first argument not int/number/interval"); return TRUE;}
+                        { Werror("first argument not int/number/interval"); return TRUE; }
                 }
 
                 interval *I = (interval*) iinterv->Data();
@@ -681,8 +695,8 @@ void box_Destroy(blackbox*, void *d)
 char* box_String(blackbox*, void *d)
 {
     blackbox *b_i = getBlackboxStuff(intervalID);
-    int i, n = currRing->N;
     box *B = (box*) d;
+    int i, n = B->R->N;
 
     if (B == NULL || B->intervals == NULL)
     {
@@ -778,7 +792,7 @@ BOOLEAN box_Op2(int op, leftv result, leftv b1, leftv b2)
     }
 
     box *B1 = (box*) b1->Data();
-    int n = currRing->N;
+    int n = B1->R->N;
 
     box *RES;
     switch(op)
@@ -889,13 +903,13 @@ BOOLEAN box_OpM(int op, leftv result, leftv args)
                 delete (box*) result->Data();
             }
 
-            int i, n = currRing->N;
             if (args->Typ() != boxID)
             {
                 Werror("can only intersect boxes");
                 return TRUE;
             }
             box *B = (box*) args->Data();
+            int i, n = B->R->N;
             number lowerb[n], upperb[n];
 
             // do not copy, use same pointers, copy at the end
@@ -965,15 +979,14 @@ BOOLEAN boxSet(leftv result, leftv args)
     assume(result->Typ() == boxID);
 
     // check for proper types
-    const short t[] = {3, boxID, INT_CMD, intervalID};
+    const short t[] = {3, (short) boxID, INT_CMD, (short) intervalID};
     if (!iiCheckTypes(args, t, 1))
     {
-        Werror("syntax: boxSet(<box>, <int>, <interval>)");
         return TRUE;
     }
-    int n = currRing->N;
     box *B = (box*) args->Data();
-    int i = (int)(long) args->next->Data();
+    int n = B->R->N,
+        i = (int)(long) args->next->Data();
     interval *I = (interval*) args->next->next->Data();
 
     if (i < 1 || i > n)
@@ -1003,18 +1016,16 @@ BOOLEAN evalPolyAtBox(leftv result, leftv args)
     assume(result->Typ() == intervalID);
 
 #ifndef SING_NDEBUG
-    if (args == NULL || args->Typ() != POLY_CMD ||
-        args->next == NULL || args->next->Typ() != boxID ||
-        args->next->next != NULL)
+    const short t[] = {2, POLY_CMD, (short) boxID};
+    if (!iiCheckTypes(args, t, 1))
     {
-        Werror("syntax: evalPolyAtBox(<poly>, <box>)");
         return TRUE;
     }
 #endif
 
-    int i, pot, n = currRing->N;
     poly p = (poly) args->Data();
     box *B = (box*) args->next->Data();
+    int i, pot, n = B->R->N;
 
     interval *tmp, *tmpPot, *tmpMonom, *RES = new interval();
 
