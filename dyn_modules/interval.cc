@@ -37,7 +37,7 @@ interval::interval(interval *I)
 {
     lower = nCopy(I->lower);
     upper = nCopy(I->upper);
-    R = currRing;
+    R = I->R;
     (R->ref)++;
 }
 
@@ -67,7 +67,7 @@ box::box()
 
 box::box(box* B)
 {
-    R = currRing;
+    R = B->R;
     int i, n = R->N;
     intervals = (interval**) omAlloc0(n * sizeof(interval*));
     if (intervals != NULL)
