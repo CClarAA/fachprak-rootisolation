@@ -939,7 +939,7 @@ example
     evalIdealAtBox(I,intervals);
 }
 
-proc exclusionTest(ideal I, box start, list #)
+proc exclusionTest(ideal I, def start, list #)
 "USAGE: exclusion test for roots with interval arithmetic
 RETURN: list of boxes
 EXAMPLE: exclusionTest for intersection of two ellipses"
@@ -963,7 +963,23 @@ EXAMPLE: exclusionTest for intersection of two ellipses"
     //set of boxes which exactly contain one solution
     list B_star;
     //set of boxes initialised to input
-    list B = list(start);
+    list B;
+    if (typeof(start) == "box")
+    {
+        B = list(start);
+    }
+    else
+    {
+        if (typeof(start) == "list")
+        {
+            // add sanity check
+            B = start;
+        }
+        else
+        {
+            ERROR("second arg must be box or list");
+        }
+    }
     //help set of boxes
     list B_prime;
 
@@ -993,7 +1009,7 @@ EXAMPLE: exclusionTest for intersection of two ellipses"
             {
                 //case that box is smaller than the input limitsize
                 // remove first case if limitsize == 0?
-                if (lengthBox(B[i]) <= limitsize)
+                if (lengthBox(B[i]) < limitsize)
                 {
                     B_size[size(B_size)+1] = B[i];
                 }
@@ -1007,7 +1023,7 @@ EXAMPLE: exclusionTest for intersection of two ellipses"
         }
 
         cnt++;
-        print(string(cnt, " ", s));
+        print(string(cnt, " ", s, " ", int(memory(0)/1024), "k"));
 
         // set B=B_prime
         B = B_prime;
@@ -1029,38 +1045,50 @@ example
     size(result[2]);
 }
 
-proc exclusionTestGroebner(ideal I, box start, list #)  //im Moment geht das nur mit eingegebener eliminationsordnung
-"USAGE: exclusiontest first for only one variable (using elimination ordering lp) and then use good starting boxes
+//im Moment geht das nur mit eingegebener eliminationsordnung
+proc exclusionTestGroebner(ideal I, box start, list #)
+"USAGE: exclusiontest first for only one variable (using elimination ordering
+        lp) and then use good starting boxes
 RETURN: list of boxes
 EXAMPLE: exclusionTestGroebner for intersection of two ellipses"
 {
-    if (nvars(basering)<3){return(exclusionTest(I,start, #));}
+    int N = nvars(basering);
+    if (N < 2)
+    {
+        return(exclusionTest(I, start, #));
+    }
 
     // compute reduced groebnerbasis for the ideal I
     option (redSB);
     //first element in groebner basis only depends on
-    ideal Groeb=groebner(I);
+    ideal Groeb = groebner(I);
 
-    ring R1=basering;
-    poly GroebnerHelp=Groeb[1];
-    GroebnerHelp=subst(GroebnerHelp,var(nvars(basering)), var(1));
-    //GroebnerHelp;
-    //R1;
-    //nvars(R1);
-    //varstr(R1,nvars(R1));
-    interval HelpInterval=start[nvars(basering)];
-    ring R2=0,var(nvars(R1)),lp;
+    ring R1 = basering;
+    poly GroebnerHelp = Groeb[1];
+    GroebnerHelp = subst(GroebnerHelp, var(N), var(1));
+/*
+    GroebnerHelp;
+    R1;
+    nvars(R1);
+    varstr(R1,nvars(R1));
+*/
+    interval HelpInterval = start[N];
+    // problematic if coefs are real
+    ring R2 = 0,var(N),lp;
 
     //change to ring with only one variable
     setring R2;
-    poly f=fetch(R1,GroebnerHelp);
-    ideal HelpIdeal=f;
+    poly f = fetch(R1, GroebnerHelp);
+    ideal HelpIdeal = f;
 
+/*
     nvars(R1);
     HelpInterval;
+*/
 
-    box HelpBox=list(HelpInterval);
+    box HelpBox = list(HelpInterval);
     list tmpBoxes = exclusionTest(HelpIdeal, HelpBox, #);
+    list hlpBoxes = tmpBoxes[1] + tmpBoxes[2];
     list helpIntervals;
     int i;
 
@@ -1068,24 +1096,19 @@ EXAMPLE: exclusionTestGroebner for intersection of two ellipses"
     // numbers of ring variables
     for (i = 1; i <= size(tmpBoxes[2]); i++)
     {
-        helpIntervals[i] = tmpBoxes[2][i][1];
+        helpIntervals[i] = hlpBoxes[i][1];
     }
 
     //change ring back to starting ring
     // boxes in HelpBoxes get deleted, why?
     setring R1;
     list result;
-    list extest;
-    int l=nvars(R1);
+    list startBoxes;
 
-    for(int i=1; i <= size(helpIntervals); i++)
+    for(i=1; i <= size(helpIntervals); i++)
     {
-        extest=exclusionTest(I, boxSet(start, l, helpIntervals[i]), #);
-        result=result + extest[2];
+        startBoxes[i] = boxSet(start, N, helpIntervals[i]);
     }
-    ~;
-    // clean up triggers free error
-    // fix in interval.cc!!!
-    return(result);
+    return(exclusionTest(I, startBoxes, #));
 }
 // vim: ft=singular
