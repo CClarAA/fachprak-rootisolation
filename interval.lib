@@ -26,6 +26,7 @@ exclusionTest           first version of our exclusion test
 
 static proc mod_init()
 {
+    LIB "atkins.lib"; // for round (tmp?)
     LIB "dyn_modules/interval.so";
 
     newstruct("ivmat", "list rows");
@@ -803,10 +804,11 @@ RETURN: -1, if ideal has no zeros in given box, 1, if unique zero in given box
         0 if test is inconclusive
 EXAMPLE: tests the above for intersection of ellipses."
 {
-    int numvars = nvars(basering);
+    int N = nvars(basering);
     int i;
 
     interval tmp;
+    number lo, up, m, n;
 
     for (i = 1; i <= ncols(I); i++)
     {
@@ -819,7 +821,7 @@ EXAMPLE: tests the above for intersection of ellipses."
         }
     }
 
-    if (ncols(I) == numvars)
+    if (ncols(I) == N)
     {
         // calculate center as box of intervals instead of numbers
         // so we may reuse other procedures
@@ -839,10 +841,8 @@ EXAMPLE: tests the above for intersection of ellipses."
         box fB = evalIdealAtBox(I, Bcenter);
         fB = Bcenter - (Jinverse * fB);
 
-        if (boxIsInterior(fB, B))
-        {
-            return(1, fB);
-        }
+        // algorothm will not process box further, so do not modify
+        int laststep = boxIsInterior(fB, B);
 
         // else intersection is empty or non-trivial
         def Bint = intersect(B, fB);
@@ -852,7 +852,45 @@ EXAMPLE: tests the above for intersection of ellipses."
         {
             return(-1, B);
         }
-        B = Bint;
+
+        // in this case, fB may have horrible fractions, so try to simplify
+        //B = Bint;
+
+        // attempt simplification of fractions
+        list bb;
+        for (i = 1; i <= N; i++)
+        {
+            lo = B[i][1];
+            up = B[i][2];
+
+            // modify numerators of B to tighten box
+            if (lo < Bint[i][1])
+            {
+                n = denominator(lo);
+                // floor
+                lo = round(Bint[i][1]*n - 1/2)/n;
+            }
+            if (up > Bint[i][2])
+            {
+                n = denominator(up);
+                // ceil
+                up = round(Bint[i][2]*n + 1/2)/n;
+            }
+
+            // make sure box does not grow
+            if (lo >= B[i][1] && up <= B[i][2])
+            {
+                bb[i] = bounds(lo, up);
+            }
+            else
+            {
+                bb[i] = Bint[i];
+            }
+        }
+
+        B = bb;
+
+        if (laststep) { return(1, B); }
     }
 
     // no condition could be verified
