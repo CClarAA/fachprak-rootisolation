@@ -939,25 +939,11 @@ example
     evalIdealAtBox(I,intervals);
 }
 
-proc exclusionTest(ideal I, def start, list #)
+proc exclusionTest(ideal I, def start, number limitsize)
 "USAGE: exclusion test for roots with interval arithmetic
 RETURN: list of boxes
 EXAMPLE: exclusionTest for intersection of two ellipses"
 {
-    number limitsize;
-    if (size(#) == 0)
-    {
-        limitsize = 0;
-    }
-    else
-    {
-        if (typeof(#[1]) <> "number")
-        {
-            ERROR("optional parameter must be a number");
-        }
-        limitsize = #[1];
-    }
-
     //set of boxes smaller than size
     list B_size;
     //set of boxes which exactly contain one solution
@@ -1046,7 +1032,7 @@ example
 }
 
 //im Moment geht das nur mit eingegebener eliminationsordnung
-proc exclusionTestGroebner(ideal I, box start, list #)
+proc exclusionTestGroebner(ideal I, box start, number eps)
 "USAGE: exclusiontest first for only one variable (using elimination ordering
         lp) and then use good starting boxes
 RETURN: list of boxes
@@ -1086,8 +1072,9 @@ EXAMPLE: exclusionTestGroebner for intersection of two ellipses"
     HelpInterval;
 */
 
+    number eps = fetch(R1, eps);
     box HelpBox = list(HelpInterval);
-    list tmpBoxes = exclusionTest(HelpIdeal, HelpBox, #);
+    list tmpBoxes = exclusionTest(HelpIdeal, HelpBox, eps);
     list hlpBoxes = tmpBoxes[1] + tmpBoxes[2];
     list helpIntervals;
     int i;
@@ -1109,6 +1096,6 @@ EXAMPLE: exclusionTestGroebner for intersection of two ellipses"
     {
         startBoxes[i] = boxSet(start, N, helpIntervals[i]);
     }
-    return(exclusionTest(I, startBoxes, #));
+    return(exclusionTest(I, startBoxes, eps));
 }
 // vim: ft=singular
