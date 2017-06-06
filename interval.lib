@@ -136,7 +136,7 @@ EXAMPLE: split two-dimensional interval into two"
 
         // else there must?/might be a zero on the intersection,
         // so decrease ratio slightly
-        ratio = ratio * 9/10;
+        ratio = ratio * 15/16;
 
         // make sure algorithm terminates, after taking too many steps
         if ( ratio < 1/100 )
@@ -1039,7 +1039,7 @@ RETURN: list of boxes
 EXAMPLE: exclusionTestGroebner for intersection of two ellipses"
 {
     int N = nvars(basering);
-    int i, j, k;
+    int i, j, k, l;
     // need at least two variables
     if (N < 2)
     {
@@ -1092,25 +1092,42 @@ EXAMPLE: exclusionTestGroebner for intersection of two ellipses"
         startBoxesPerDim[i] = univarResult[1] + univarResult[2];
     }
 
-    list startBoxes, sbTemp, sbTempTemp;
+    intvec sizes, repCount = 0:N, 1:N;
+    int numBoxes = 1;
 
-    for (j = 1; j <= size(startBoxesPerDim[1]); j++)
+    for (i = 1; i <= N; i++)
     {
-        sbTemp[j] = list(startBoxesPerDim[1][j][1]);
+        sizes[i] = size(startBoxesPerDim[i]);
+        numBoxes = numBoxes * sizes[i];
     }
 
-    // kind of cartesian product of boxes, is actually very slow!
-    for (i = 2; i <= N; i++)
+    for (i = N-1; i >= 1; i--)
     {
-        sbTempTemp = sbTemp;
-        sbTemp = list();
+        repCount[i] = repCount[i+1] * sizes[i+1];
+    }
 
-        for (j = 1; j <= size(sbTempTemp); j++)
+    list startBoxes, sbTemp;
+
+    for (i = 1; i <= numBoxes; i++)
+    {
+        sbTemp[i] = list();
+    }
+
+    // computes "cartesian product" of found boxes to lift to N variables
+    // ring variables
+    for (i = 1; i <= N; i++)
+    {
+        // full loop of elements
+        for (j = 0; j < numBoxes; j = j + sizes[i]*repCount[i])
         {
-            for (k = 1; k <= size(startBoxesPerDim[i]); k++)
+            // boxes
+            for (k = 0; k < sizes[i]; k++)
             {
-                // probably very inefficient
-                sbTemp = sbTemp + list(sbTempTemp[j] + list(startBoxesPerDim[i][k][1]));
+                // repetions
+                for (l = 1; l <= repCount[i]; l++)
+                {
+                    sbTemp[j+k*repCount[i]+l][i] = startBoxesPerDim[i][k+1][1];
+                }
             }
         }
     }
