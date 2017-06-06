@@ -1039,63 +1039,90 @@ RETURN: list of boxes
 EXAMPLE: exclusionTestGroebner for intersection of two ellipses"
 {
     int N = nvars(basering);
+    int i, j, k;
+    // need at least two variables
     if (N < 2)
     {
-        return(exclusionTest(I, start, #));
+        return(exclusionTest(I, start, eps));
     }
 
-    // compute reduced groebnerbasis for the ideal I
-    option (redSB);
-    //first element in groebner basis only depends on
-    ideal Groeb = groebner(I);
+    // construct single variable ring from basering
+    ring rSource = basering;
+    list rList = ringlist(rSource);
+    // delete all but first variable
+    rList[2] = list(rList[2][1]);
+    // adjust weight vector
+    rList[3][1][2] = intvec(1);
 
-    ring R1 = basering;
-    poly GroebnerHelp = Groeb[1];
-    GroebnerHelp = subst(GroebnerHelp, var(N), var(1));
-/*
-    GroebnerHelp;
-    R1;
-    nvars(R1);
-    varstr(R1,nvars(R1));
-*/
-    interval HelpInterval = start[N];
-    // problematic if coefs are real
-    ring R2 = 0,var(N),lp;
+    // compute reduced groebner bases
+    option(redSB);
 
-    //change to ring with only one variable
-    setring R2;
-    poly f = fetch(R1, GroebnerHelp);
-    ideal HelpIdeal = f;
+    ideal gbUnivarPolys, gbTemp, Ipermutation;
+    intvec perm;
 
-/*
-    nvars(R1);
-    HelpInterval;
-*/
-
-    number eps = fetch(R1, eps);
-    box HelpBox = list(HelpInterval);
-    list tmpBoxes = exclusionTest(HelpIdeal, HelpBox, eps);
-    list hlpBoxes = tmpBoxes[1] + tmpBoxes[2];
-    list helpIntervals;
-    int i;
-
-    // boxes become weird when switching between rings with different
-    // numbers of ring variables
-    for (i = 1; i <= size(tmpBoxes[2]); i++)
+    // permute every variable to the end once and compute Groebner basis to
+    // find univariate polynomial in that variable
+    for (i = 1; i <= N; i++)
     {
-        helpIntervals[i] = hlpBoxes[i][1];
+        perm = 1..N;
+        perm[i] = N;
+        perm[N] = i;
+
+        Ipermutation = fetch(rSource, I, perm);
+        gbTemp = groebner(Ipermutation);
+
+        // first poly in GB now only depends on last variable
+        gbUnivarPolys[i] = gbTemp[1];
     }
 
-    //change ring back to starting ring
-    // boxes in HelpBoxes get deleted, why?
-    setring R1;
-    list result;
-    list startBoxes;
+    list univarResult, startBoxesPerDim;
 
-    for(i=1; i <= size(helpIntervals); i++)
+    // do computations in univariate ring
+    ring rUnivar = ring(rList);
+    setring rUnivar;
+
+    // gbUnivarPoly only contains var(N), make sure variables are properly mapped
+    ideal gbUnivarPolys = fetch(rSource, gbUnivarPolys, intvec(0:(N-1),1));
+    number eps = fetch(rSource, eps);
+
+    for (i = 1; i <= N; i++)
     {
-        startBoxes[i] = boxSet(start, N, helpIntervals[i]);
+        univarResult = exclusionTest(ideal(gbUnivarPolys[i]), box(list(start[i])), eps);
+        // maybe result[1] is not empty, so take both
+        startBoxesPerDim[i] = univarResult[1] + univarResult[2];
     }
+
+    list startBoxes, sbTemp, sbTempTemp;
+
+    for (j = 1; j <= size(startBoxesPerDim[1]); j++)
+    {
+        sbTemp[j] = list(startBoxesPerDim[1][j][1]);
+    }
+
+    // kind of cartesian product of boxes, is actually very slow!
+    for (i = 2; i <= N; i++)
+    {
+        sbTempTemp = sbTemp;
+        sbTemp = list();
+
+        for (j = 1; j <= size(sbTempTemp); j++)
+        {
+            for (k = 1; k <= size(startBoxesPerDim[i]); k++)
+            {
+                // probably very inefficient
+                sbTemp = sbTemp + list(sbTempTemp[j] + list(startBoxesPerDim[i][k][1]));
+            }
+        }
+    }
+
+    // switch back for final computation
+    // and so that boxes have proper size
+    setring rSource;
+    for (i = 1; i <= size(sbTemp); i++)
+    {
+        startBoxes[i] = box(sbTemp[i]);
+    }
+
     return(exclusionTest(I, startBoxes, eps));
 }
 // vim: ft=singular
