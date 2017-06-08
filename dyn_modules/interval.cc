@@ -14,7 +14,7 @@ interval::interval()
     lower = nInit(0);
     upper = nInit(0);
     R = currRing;
-    (R->ref)++;
+    R->ref++;
 }
 
 interval::interval(number a)
@@ -22,7 +22,7 @@ interval::interval(number a)
     lower = a;
     upper = nCopy(a);
     R = currRing;
-    (R->ref)++;
+    R->ref++;
 }
 
 interval::interval(number a, number b)
@@ -30,7 +30,7 @@ interval::interval(number a, number b)
     lower = a;
     upper = b;
     R = currRing;
-    (R->ref)++;
+    R->ref++;
 }
 
 interval::interval(interval *I)
@@ -45,7 +45,7 @@ interval::~interval()
 {
     nDelete(&lower);
     nDelete(&upper);
-    (R->ref)--;
+    R->ref--;
 }
 
 /* box */
@@ -62,7 +62,7 @@ box::box()
             intervals[i] = new interval();
         }
     }
-    (R->ref)++;
+    R->ref++;
 }
 
 box::box(box* B)
@@ -77,7 +77,7 @@ box::box(box* B)
             intervals[i] = new interval(B->intervals[i]);
         }
     }
-    (R->ref)++;
+    R->ref++;
 }
 
 box::~box()
@@ -88,7 +88,7 @@ box::~box()
         delete intervals[i];
     }
     omFree((void**) intervals);
-    (R->ref)--;
+    R->ref--;
 }
 
 /*

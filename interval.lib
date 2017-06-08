@@ -46,7 +46,7 @@ static proc mod_init()
 proc lengthBox(box B)
 "USAGE: length(B), B box
 RETURN: length/size in measure sense
-EXAMPLE: compute length of boxes"
+EXAMPLE: example lengthBox; computes length of boxes"
 {
     number maximum = 0;
     int n = nvars(basering);
@@ -60,7 +60,7 @@ EXAMPLE: compute length of boxes"
 }
 example
 {
-    echo = 2;
+    "EXAMPLE:"; echo = 2;
     ring R = 0,(x,y),lp;
 
     interval I = bounds(0, 1);    I;
@@ -74,7 +74,7 @@ example
 proc boxCenter(box M)
 "USAGE: boxCenter(M), M ivmat
 RETURN: box containing center elements of M
-EXAMPLE: compute center box"
+EXAMPLE: example boxCenter; computes center box"
 {
     int n = nvars(basering);
 
@@ -90,7 +90,7 @@ EXAMPLE: compute center box"
 }
 example
 {
-    echo = 2;
+    "EXAMPLE:"; echo = 2;
     ring R = 0,(x,y),lp;
     interval I1 = bounds(1/3, 7/4);
     interval I2 = bounds(0,2);
@@ -103,13 +103,13 @@ example
 proc splitBox(box B, ideal I)
 "USAGE: splitBox(box, I), box list of intervals, I ideal
 RETURN: new list of smaller boxes, such that intersection of borders does not contain zeros of I
-EXAMPLE: split two-dimensional interval into two"
+EXAMPLE: example splitBox; splits two-dimensional interval into two"
 {
     // at first split only at largest interval
     int imax = 1;
-    int n = nvars(basering);
+    int N = nvars(basering);
 
-    for (int i = 2; i <= n; i++)
+    for (int i = 2; i <= N; i++)
     {
         if (length(B[i]) > length(B[imax])) { imax = i; }
     }
@@ -123,8 +123,9 @@ EXAMPLE: split two-dimensional interval into two"
     {
         mean = ratio * B[imax][1] + (1 - ratio) * B[imax][2];
 
+        // note this works only for ideals with N generators or less
         intersection = evalIdealAtBox(I, boxSet(B, imax, interval(mean)));
-        for (i = 1; i <= n; i++)
+        for (i = 1; i <= N; i++)
         {
             // check if any interval does not contain zero
             if (intersection[i][1]*intersection[i][2] > 0) { break; }
@@ -138,7 +139,8 @@ EXAMPLE: split two-dimensional interval into two"
         // so decrease ratio slightly
         ratio = ratio * 15/16;
 
-        // make sure algorithm terminates, after taking too many steps
+        // make sure algorithm terminates after taking too many steps
+        // this may not be necessary
         if ( ratio < 1/100 )
         {
             print("splitBox took too long");
@@ -154,7 +156,7 @@ EXAMPLE: split two-dimensional interval into two"
 }
 example
 {
-    echo = 2;
+    "EXAMPLE:"; echo = 2;
     ring R = 0,(x,y),lp;
 
     box B = list(bounds(0,1),
@@ -162,24 +164,27 @@ example
 
     B;
     splitBox(B,1);
+    splitBox(B,y-1); // contains zero on first splitting plane candidate
 }
 
 proc boxIsInterior(box A, box B)
 "USAGE: boxIsInterior(A, B), A, B box
 RETURN: 1 if A contained in int(B) else 0
-EXAMPLE: boxIsInterior"
+EXAMPLE: example boxIsInterior; check whether A is contained in int(B)"
 {
-    int n = nvars(basering);
-    for (int i=1; i<= n; i++)
+    int N = nvars(basering);
+    for (int i = 1; i <= N; i++)
     {
-        if (A[i][1] <= B[i][1] || A[i][2] >= B[i][2]){return(0);}
+        if (A[i][1] <= B[i][1] || A[i][2] >= B[i][2]) { return(0); }
     }
     return(1);
 }
 example
 {
-    echo=2;
-    ring R=0,(x,y,z), lp;
+    "EXAMPLE:"; echo=2;
+
+    ring R = 0,(x,y,z), lp;
+
     box A = list(bounds(1,2), bounds(2,3), bounds(1/2,7/2)); A;
     box B1 = list(bounds(0,5/2), bounds(1,4), bounds(0,9)); B1;
     boxIsInterior(A,B1);
@@ -195,7 +200,7 @@ example
 proc ivmatInit(numrows, numcols)
 "USAGE: ivmatInit(m, n) m, n int
 RETURN: mxn matrix of [0,0]-intervals
-EXAMPLE: initialises an interval matrix"
+EXAMPLE: example ivmatInit; initialises an interval matrix"
 {
     ivmat A;
     A.rows = list();
@@ -215,7 +220,7 @@ EXAMPLE: initialises an interval matrix"
 }
 example
 {
-    echo = 2;
+    "EXAMPLE:"; echo = 2;
     ring R = 0,x(1..5),lp;
 
     ivmat A = ivmatInit(4, 5); A;
@@ -224,13 +229,13 @@ example
 proc ivmatNrows(ivmat M)
 "USAGE: nrows(M), M ivmat
 RETURN: number of rows of M
-EXAMPLE: calculate number of rows"
+EXAMPLE: example ivmatNrows; return number of rows"
 {
     return(size(M.rows));
 }
 example
 {
-    echo = 2;
+    "EXAMPLE:"; echo = 2;
     ring R = 0,x,lp;
 
     ivmat A = ivmatInit(2,3);
@@ -240,13 +245,13 @@ example
 proc ivmatNcols(ivmat M)
 "USAGE: ncols(M), M ivmat
 RETURN: number of columns of M
-EXAMPLE: calculate number of columns"
+EXAMPLE: example ivmatNcols; return number of columns"
 {
     return(size(M.rows[1]));
 }
 example
 {
-    echo = 2;
+    "EXAMPLE:"; echo = 2;
     ring R = 0,x,lp;
 
     ivmat A = ivmatInit(2,3);
@@ -256,7 +261,7 @@ example
 proc ivmatAssign(int m, int n, list #)
 "USAGE: ivmatAssign(m, n, L), m, n int, L list of intervals
 RETURN: interval matrix containing intervals L in row major order
-EXAMPLE: builds matrix from intervals"
+EXAMPLE: example ivmatAssign; builds matrix from intervals"
 {
     list intervals;
     if (size(#) == 1 && typeof(#[1]) == "list")
@@ -289,7 +294,7 @@ EXAMPLE: builds matrix from intervals"
 }
 example
 {
-    echo = 2;
+    "EXAMPLE"; echo = 2;
     ring R = 0,(x,y),lp;
 
     interval I = bounds(1, 2);
@@ -300,7 +305,7 @@ example
 proc ivmatPrint(ivmat A)
 "USAGE: A; A ivmat
 RETURN: nothing
-EXAMPLE: prints a matrix"
+EXAMPLE: example ivmatPrint; prints a matrix"
 {
     int m = nrows(A);
     for (int i = 1; i <= m; i++)
@@ -316,13 +321,13 @@ example
 proc ivmatGet(ivmat A, int i)
 "USAGE: A[i], A ivmat, i int
 RETURN: list A[i] of i-th row of A
-EXAMPLE: get single interals of matrix"
+EXAMPLE: example ivmatGet; get single interals of matrix"
 {
     return(A.rows[i]);
 }
 example
 {
-    echo = 2;
+    "EXAMPLE:"; echo = 2;
     ring R = 0,x,lp;
 
     ivmat A = ivmatAssign(2, 2, bounds(1, 2));
@@ -333,14 +338,14 @@ example
 proc ivmatSet(ivmat A, int i, int j, interval I)
 "USAGE: ivmatSet(A, i, j, I), A ivmat, i, j, int, I interval
 RETURN: ivmat A where A[i][j] == I
-EXAMPLE: assign values of A"
+EXAMPLE: example ivmatSet; assign values to A"
 {
     A.rows[i][j] = I;
     return(A);
 }
 example
 {
-    echo = 2;
+    "EXAMPLE:"; echo = 2;
     ring R = 0,x,lp;
     ivmat A = ivmatInit(2,2);             A;
     A = ivmatSet(A, 1, 2, bounds(1, 2));  A;
@@ -349,7 +354,7 @@ example
 proc diagMatrix(int n, interval I)
 "USAGE: diagMatrix(n, I), n int, I interval
 RETURN: diagonal nxn-matrix E where E[i][i] == I for all 1 <= i <= n
-EXAMPLE: create diagonal matrix"
+EXAMPLE: example diagMatrix; create diagonal matrix"
 {
     ivmat E = ivmatInit(n, n);
     for (int i = 1; i <= n; i++)
@@ -360,7 +365,7 @@ EXAMPLE: create diagonal matrix"
 }
 example
 {
-    echo = 2;
+    "EXAMPLE:"; echo = 2;
     ring R = 0,x,lp;
     ivmat A = diagMatrix(2, bounds(1, 2)); A;
 }
@@ -368,13 +373,13 @@ example
 proc unitMatrix(int n)
 "USAGE: unitMatrix(n)
 RETURN: nxn unit matrix
-EXAMPLE: create unit matrix"
+EXAMPLE: example unitMatrix; create unit matrix"
 {
     return(diagMatrix(n, 1));
 }
 example
 {
-    echo = 2;
+    "EXAMPLE:"; echo = 2;
     ring R = 0,x,lp;
 
     ivmat E = unitMatrix(4); E;
@@ -383,7 +388,7 @@ example
 proc determinant(ivmat A)
 "USAGE: det(A), A ivmat
 RETURN: determinant calculated by standard interval arithmetic
-EXAMPLE: calculates a determinant"
+EXAMPLE: example determinant; calculates a determinant"
 {
     int n = ncols(A);
     if (n == 1)
@@ -400,7 +405,7 @@ EXAMPLE: calculates a determinant"
 }
 example
 {
-    echo = 2;
+    "EXAMPLE:"; echo = 2;
     ring R = 0,x,lp;
 
     ivmat E = unitMatrix(3); E;
@@ -417,7 +422,7 @@ example
 proc cofactor(ivmat A, int i, int j)
 "USAGE: cofactor(A, i, j), A ivmat, i, j int
 RETURN: cofactor of A at position (i,j)
-EXAMPLE: compute cofactors"
+EXAMPLE: example cofactor; compute cofactors"
 {
     int n = ncols(A);
     if (n == 1) { return(A[1][1]); }
@@ -438,7 +443,7 @@ EXAMPLE: compute cofactors"
 }
 example
 {
-    echo = 2;
+    "EXAMPLE:"; echo = 2;
     ring R = 0,x,lp;
 
     interval I = bounds(1, 2);
@@ -453,7 +458,7 @@ example
 proc adjunct(ivmat A)
 "USAGE: adjuct(A), A ivmat
 RETURN: adjuct matrix i.e. transpose cofactor matrix
-EXAMPLE: compute adjunct matrix"
+EXAMPLE: example adjunct; compute adjunct matrix"
 {
     int n = size(A[1]);
     ivmat adj = ivmatInit(n, n);
@@ -471,7 +476,7 @@ EXAMPLE: compute adjunct matrix"
 }
 example
 {
-    echo = 2;
+    "EXAMPLE:"; echo = 2;
     ring R = 0,x,lp;
 
     interval I = bounds(1, 2);
@@ -486,7 +491,7 @@ example
 proc ivmatCenter(ivmat M)
 "USAGE: ivmatCenter(M), M ivmat
 RETURN: martix containing center elements of M
-EXAMPLE: compute center matrix"
+EXAMPLE: example ivmatCenter; compute center matrix"
 {
     int m = nrows(M);
     int n = ncols(M);
@@ -506,7 +511,7 @@ EXAMPLE: compute center matrix"
 }
 example
 {
-    echo = 2;
+    "EXAMPLE:"; echo = 2;
     ring R = 0,x,lp;
 
     interval I = bounds(1/3, 7/4);
@@ -519,7 +524,7 @@ example
 proc ivmatRadius(ivmat M)
 "USAGE: ivmatRadius(M), M ivmat
 RETURN: martix containing radius elements of M
-EXAMPLE: compute radius matrix"
+EXAMPLE: example ivmatRadius; compute radius matrix"
 {
     int m = nrows(M);
     int n = ncols(M);
@@ -539,7 +544,7 @@ EXAMPLE: compute radius matrix"
 }
 example
 {
-    echo = 2;
+    "EXAMPLE"; echo = 2;
     ring R = 0,x,lp;
 
     interval I = bounds(1/3, 7/4);
@@ -552,7 +557,7 @@ example
 proc ivmatMultiply(ivmat A, ivmat B)
 "USAGE: A*B, A, B ivmat
 RETURN: matrix product of A and B
-EXAMPLE: multiply matrices"
+EXAMPLE: example ivmatMultiply; multiply matrices"
 {
     int m = nrows(A);
     int n = ncols(B);
@@ -584,7 +589,7 @@ EXAMPLE: multiply matrices"
 }
 example
 {
-    echo = 3;
+    "EXAMPLE:"; echo = 3;
     ring R = 0,x,lp;
 
     interval I = bounds(0, 1);
@@ -609,7 +614,7 @@ example
 proc ivmatGaussian(ivmat A)
 "USAGE: ivmatGaussian(A) A ivmat
 RETURN: 0 if A not invertible, 1,Ainv if A invertible
-EXAMPLE: some matrix"
+EXAMPLE: example ivmatGaussian; invert a matrix using Gauss elimination"
 {
     int n = nrows(A);
     if (n <> ncols(A))
@@ -676,7 +681,7 @@ EXAMPLE: some matrix"
 }
 example
 {
-    echo = 2;
+    "EXAMPLE:"; echo = 2;
     ring R = 0,(x,y),lp;
 
     ideal I = 2x2-xy+2y2-2,2x2-3xy+3y2-2;
@@ -699,7 +704,7 @@ example
 proc applyMatrix(ivmat A, box b)
 "USAGE: A * b, A ivmat, b box
 RETURN: A*b
-EXAMPLE: apply matrix to box"
+EXAMPLE: example applyMatrix; apply matrix to box"
 {
     int n = nvars(basering);
 
@@ -726,7 +731,7 @@ EXAMPLE: apply matrix to box"
 }
 example
 {
-    echo = 3;
+    "EXAMPLE:"; echo = 3;
     ring R = 0,(x,y,z),lp;
 
     ideal I = xyz3+z2y2+x,x4+y3+2z+3,xyz+1/2;
@@ -744,7 +749,7 @@ example
 proc ivmatMultiplyGeneral(ivmat A, B)
 "USAGE: A * B, A ivmat, B ivmat or box
 RETURN: usual matrix product where box is a nx1 matrix
-EXAMPLE: multiply matrices with matrices and boxes"
+EXAMPLE: example ivmatMultiplyGeneral; multiply matrices with matrices and boxes"
 {
     if (typeof(B) == "ivmat")
     {
@@ -769,7 +774,7 @@ example
 proc evalJacobianAtBox(ideal I, box B)
 "USAGE: evalJacobianAtBox(I, B), I ideal B box
 RETURN: jacobian matrix of I where polynomials are evaluated at the given box
-EXAMPLE: evalate Jacobian at box"
+EXAMPLE: example evalJacobianAtBox; evalate Jacobian at box"
 {
     matrix J = jacob(I);
     int m = nrows(J);
@@ -789,7 +794,7 @@ EXAMPLE: evalate Jacobian at box"
 }
 example
 {
-    echo = 2;
+    "EXAMPLE:"; echo = 2;
     ring R = 0,(x,y),lp;
     ideal I = 2x2-xy+2y2-2, 2x2-3xy+3y2-2;
 
@@ -802,7 +807,7 @@ proc testPolyBox(ideal I, box B)
         I ideal, intervals list of intervals, I1, I2, .. intervals
 RETURN: -1, if ideal has no zeros in given box, 1, if unique zero in given box
         0 if test is inconclusive
-EXAMPLE: tests the above for intersection of ellipses."
+EXAMPLE: example testPolyBox; tests the above for intersection of ellipses."
 {
     int N = nvars(basering);
     int i;
@@ -857,6 +862,7 @@ EXAMPLE: tests the above for intersection of ellipses."
         //B = Bint;
 
         // attempt simplification of fractions
+        // add check if we work over reals
         list bb;
         for (i = 1; i <= N; i++)
         {
@@ -898,7 +904,7 @@ EXAMPLE: tests the above for intersection of ellipses."
 }
 example
 {
-    echo = 2;
+    "EXAMPLE:"; echo = 2;
     ring R = 0,(x,y),lp;
     ideal I = 2x2-xy+2y2-2, 2x2-3xy+3y2-2;
 
@@ -913,7 +919,7 @@ example
 proc evalIdealAtBox(ideal I, box B)
 "USAGE: evaluate ideal at list of intervals i.e. at a box
 RETURN: list
-EXAMPLE: evalIdealAtBox"
+EXAMPLE: example evalIdealAtBox; evaluates an ideal at a box"
 {
     list resu;
 
@@ -925,7 +931,7 @@ EXAMPLE: evalIdealAtBox"
 }
 example
 {
-    echo = 2;
+    "EXAMPLE:"; echo = 2;
     ring R = 0,(x,y),lp;
     interval I1 = bounds(0, 1); I1;
     interval I2 = bounds(0, 1); I2;
@@ -942,7 +948,7 @@ example
 proc exclusionTest(ideal I, def start, number limitsize)
 "USAGE: exclusion test for roots with interval arithmetic
 RETURN: list of boxes
-EXAMPLE: exclusionTest for intersection of two ellipses"
+EXAMPLE: example exclusionTest; exclusion test for intersection of two ellipses"
 {
     //set of boxes smaller than size
     list B_size;
@@ -1018,7 +1024,7 @@ EXAMPLE: exclusionTest for intersection of two ellipses"
 }
 example
 {
-    echo = 2;
+    "EXAMPLE:"; echo = 2;
 
     ring R = 0,(x,y),lp;
     ideal I = 2x2-xy+2y2-2,2x2-3xy+3y2-2;  // V(I) has four elements
@@ -1029,6 +1035,8 @@ example
     list result = exclusionTest(I, B, 1/512);
     size(result[1]);
     size(result[2]);
+
+    result;
 }
 
 //im Moment geht das nur mit eingegebener eliminationsordnung
@@ -1036,7 +1044,7 @@ proc exclusionTestGroebner(ideal I, box start, number eps)
 "USAGE: exclusiontest first for only one variable (using elimination ordering
         lp) and then use good starting boxes
 RETURN: list of boxes
-EXAMPLE: exclusionTestGroebner for intersection of two ellipses"
+EXAMPLE: example exclusionTestGroebner; for intersection of two ellipses"
 {
     int N = nvars(basering);
     int i, j, k, l;
@@ -1075,8 +1083,6 @@ EXAMPLE: exclusionTestGroebner for intersection of two ellipses"
         gbUnivarPolys[i] = gbTemp[1];
     }
 
-    list univarResult, startBoxesPerDim;
-
     // do computations in univariate ring
     ring rUnivar = ring(rList);
     setring rUnivar;
@@ -1084,12 +1090,15 @@ EXAMPLE: exclusionTestGroebner for intersection of two ellipses"
     // gbUnivarPoly only contains var(N), make sure variables are properly mapped
     ideal gbUnivarPolys = fetch(rSource, gbUnivarPolys, intvec(0:(N-1),1));
     number eps = fetch(rSource, eps);
+    list univarResult, startBoxesPerDim;
 
     for (i = 1; i <= N; i++)
     {
         univarResult = exclusionTest(ideal(gbUnivarPolys[i]), box(list(start[i])), eps);
         // maybe result[1] is not empty, so take both
         startBoxesPerDim[i] = univarResult[1] + univarResult[2];
+        // debug:
+        print(string("Sieved variable ", i, " to ", size(startBoxesPerDim[i]), " boxes."));
     }
 
     intvec sizes, repCount = 0:N, 1:N;
@@ -1114,7 +1123,6 @@ EXAMPLE: exclusionTestGroebner for intersection of two ellipses"
     }
 
     // computes "cartesian product" of found boxes to lift to N variables
-    // ring variables
     for (i = 1; i <= N; i++)
     {
         // full loop of elements
@@ -1126,14 +1134,14 @@ EXAMPLE: exclusionTestGroebner for intersection of two ellipses"
                 // repetions
                 for (l = 1; l <= repCount[i]; l++)
                 {
+                    // last index since we need interval in one-dimensional box
                     sbTemp[j+k*repCount[i]+l][i] = startBoxesPerDim[i][k+1][1];
                 }
             }
         }
     }
 
-    // switch back for final computation
-    // and so that boxes have proper size
+    // switch back for final computation and so that boxes have proper size
     setring rSource;
     for (i = 1; i <= size(sbTemp); i++)
     {
@@ -1141,5 +1149,9 @@ EXAMPLE: exclusionTestGroebner for intersection of two ellipses"
     }
 
     return(exclusionTest(I, startBoxes, eps));
+}
+example
+{
+    "EXAMPLE:"; echo = 2;
 }
 // vim: ft=singular
