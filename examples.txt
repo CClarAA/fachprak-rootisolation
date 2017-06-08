@@ -26,5 +26,6 @@ example evalJacobianAtBox;
 example testPolyBox;
 example evalIdealAtBox;
 example exclusionTest;
+example noRootsOnBoundary;
 
 quit;

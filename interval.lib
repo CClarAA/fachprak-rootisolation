@@ -1039,6 +1039,55 @@ example
     result;
 }
 
+proc noRootsOnBoundary(ideal I, box B)
+"USAGE: noZeroesOnBoundary(I, B), I ideal, B box
+RETURN: 1 if I has no roots on the boundary of B,
+        0 if there may be such roots
+        for each ring variable
+EXAMPLE: example noRootsOnBoundary; tests boxes for roots"
+{
+    int N = nvars(basering);
+    int i, j, k;
+    intvec noZero = 0:(2*N);
+
+    box evalIntersection;
+
+    for (i = 1; i <= N; i++)
+    {
+        for (j = 1; j <= 2; j++)
+        {
+            evalIntersection = evalIdealAtBox(I, boxSet(B, i, bounds(B[i][j])));
+            for (k = 1; k <= N; k++)
+            {
+                if (evalIntersection[k][1]*evalIntersection[k][2] > 0)
+                {
+                    noZero[2*i+j-2] = 1;
+                    break;
+                }
+            }
+            if (!noZero[2*i+j-2])
+            {
+                // check if V(I + ...) is empty over CC[x(...)]
+                noZero[2*i+j-2] = std(I + (var(i) - B[i][j])) == 1;
+            }
+        }
+    }
+    return(noZero);
+}
+example
+{
+    "EXAMPLE:"; echo = 2;
+    ring R = 0,(x,y),lp;
+
+    ideal I = x+1,y-2;
+
+    interval I1, I2, I3 = bounds(0,1), bounds(-1,0), bounds(-2,2);
+
+    noRootsOnBoundary(I, box(list(I1,I2)));
+    noRootsOnBoundary(I, box(list(I2,I1)));
+    noRootsOnBoundary(I, box(list(I2,I3)));
+}
+
 //im Moment geht das nur mit eingegebener eliminationsordnung
 proc exclusionTestGroebner(ideal I, box start, number eps)
 "USAGE: exclusiontest first for only one variable (using elimination ordering
@@ -1048,6 +1097,29 @@ EXAMPLE: example exclusionTestGroebner; for intersection of two ellipses"
 {
     int N = nvars(basering);
     int i, j, k, l;
+
+    intvec noZeroes;
+    // check if there are roots on the boundary of start
+    while(1)
+    {
+        noZeroes = noRootsOnBoundary(I, start);
+        // stop if all boundaries root-free
+        if (product(noZeroes)) { break; }
+
+        for (i = 1; i <= N; i++)
+        {
+            for (j = 1; j <= 2; j++)
+            {
+                // change offending boundary
+                if (!noZeroes[2*i+j-2])
+                {
+                    start = boxSet(start, i,
+                        start[i] + (-1)^j * bounds(0, length(start[i])/10));
+                }
+            }
+        }
+    }
+
     // need at least two variables
     if (N < 2)
     {
@@ -1153,5 +1225,6 @@ EXAMPLE: example exclusionTestGroebner; for intersection of two ellipses"
 example
 {
     "EXAMPLE:"; echo = 2;
+    // TODO
 }
 // vim: ft=singular
