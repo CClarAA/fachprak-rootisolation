@@ -38,7 +38,7 @@ interval::interval(interval *I)
     lower = nCopy(I->lower);
     upper = nCopy(I->upper);
     R = I->R;
-    (R->ref)++;
+    R->ref++;
 }
 
 interval::~interval()
@@ -145,7 +145,6 @@ void interval_Destroy(blackbox*, void *d)
 // assigning values to intervals
 BOOLEAN interval_Assign(leftv result, leftv args)
 {
-    // schlaegt fehl bei Verwendung als "bounds": dann ist result->Typ()==0
     assume(result->Typ() == intervalID);
     interval *RES;
 
@@ -225,12 +224,6 @@ BOOLEAN interval_Assign(leftv result, leftv args)
 
     args->CleanUp();
     return FALSE;
-}
-
-// alias to interval_Assign, used in interval.lib
-BOOLEAN bounds(leftv result, leftv args)
-{
-    return interval_Assign(result, args);
 }
 
 BOOLEAN length(leftv result, leftv arg)
@@ -1103,7 +1096,6 @@ extern "C" int mod_init(SModulFunctions* psModulFunctions)
     Print("Created type box with id %d\n", boxID);
 
     // add additional functions
-    psModulFunctions->iiAddCproc("interval.lib", "bounds", FALSE, bounds);
     psModulFunctions->iiAddCproc("interval.lib", "length", FALSE, length);
     psModulFunctions->iiAddCproc("interval.lib", "boxSet", FALSE, boxSet);
     psModulFunctions->iiAddCproc("interval.lib", "evalPolyAtBox", FALSE,

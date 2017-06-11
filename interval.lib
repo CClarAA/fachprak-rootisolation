@@ -6,7 +6,7 @@ AUTHORS:    Dominik Bendle
             Clara Petroll
 
 OVERLOADS:
-// intervalmatrices
+// interval matrices
 [           ivmatGet            indexing
 print       ivmatPrint          printing
 nrows       ivmatNrows          number of rows
@@ -22,24 +22,44 @@ ivmatGaussian           Gaussian elimination on matrices
 
 exclusionTest           first version of our exclusion test
 ";
-///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 static proc mod_init()
 {
-    LIB "atkins.lib"; // for round (tmp?)
     LIB "dyn_modules/interval.so";
+    LIB "atkins.lib"; // for round (tmp?)
 
     newstruct("ivmat", "list rows");
-    system("install", "ivmat", "print", ivmatPrint,             1);
-    system("install", "ivmat", "[",     ivmatGet,               2);
-    system("install", "ivmat", "nrows", ivmatNrows,             1);
-    system("install", "ivmat", "ncols", ivmatNcols,             1);
-    system("install", "ivmat", "det",   determinant,            1);
-    system("install", "ivmat", "*",     ivmatMultiplyGeneral,   2);
+    system("install", "ivmat", "print", ivmatPrint,           1);
+    system("install", "ivmat", "[",     ivmatGet,             2);
+    system("install", "ivmat", "nrows", ivmatNrows,           1);
+    system("install", "ivmat", "ncols", ivmatNcols,           1);
+    system("install", "ivmat", "det",   determinant,          1);
+    system("install", "ivmat", "*",     ivmatMultiplyGeneral, 2);
 }
 
-///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
+// INTERVAL FUNCTIONS
+
+proc bounds(number a, list #)
+"USAGE: bounds(a), bounds(a,b), a, b number
+RETURN: interval I = [a,b]
+EXAMPLE: example bounds; creates interval from bounds"
+{
+    interval I;
+    if (size(#) == 0)
+    {
+        I = a;
+        return(I);
+    }
+    if (size(#) == 1 && (typeof(#[1]) == "number" || typeof(#[1]) == "int"))
+    {
+        I = a, #[1];
+        return(I);
+    }
+    ERROR("syntax: bounds(<number>) or bounds(<number>, <number>)");
+}
 
 // BOX FUNCTIONS
 
@@ -193,7 +213,7 @@ example
     boxIsInterior(A,B2);
 }
 
-///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 // MATRIX FUNCTIONS
 
@@ -767,7 +787,7 @@ example
     example applyMatrix;
 }
 
-///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 // POLYNOMIAL APPLICATIONS
 
@@ -803,10 +823,12 @@ example
 }
 
 proc testPolyBox(ideal I, box B)
-"USAGE: testPolyBox(I, intervals) or testPolyBox(I, I1, I2, ..)
-        I ideal, intervals list of intervals, I1, I2, .. intervals
-RETURN: -1, if ideal has no zeros in given box, 1, if unique zero in given box
-        0 if test is inconclusive
+"USAGE: testPolyBox(I, B), I ideal, B box
+RETURN: list(int, box):
+        -1, if ideal has no zeros in given box,
+        1, if unique zero in given box
+        0 if test is inconclusive;
+        box is intersection of Newton step and supplied box
 EXAMPLE: example testPolyBox; tests the above for intersection of ellipses."
 {
     int N = nvars(basering);
@@ -826,6 +848,7 @@ EXAMPLE: example testPolyBox; tests the above for intersection of ellipses."
         }
     }
 
+    // this is always the case in our applications
     if (ncols(I) == N)
     {
         // calculate center as box of intervals instead of numbers
@@ -942,7 +965,7 @@ example
     ideal I = f,g;
     list intervals = I1,I2;
 
-    evalIdealAtBox(I,intervals);
+    evalIdealAtBox(I, intervals);
 }
 
 proc exclusionTest(ideal I, def start, number limitsize)
@@ -1041,9 +1064,8 @@ example
 
 proc noRootsOnBoundary(ideal I, box B)
 "USAGE: noZeroesOnBoundary(I, B), I ideal, B box
-RETURN: 1 if I has no roots on the boundary of B,
-        0 if there may be such roots
-        for each ring variable
+RETURN: intvec containing 1 if I has no roots on the boundary of B,
+        0 if there may be such roots for all 2*nvars(basering) boundaries
 EXAMPLE: example noRootsOnBoundary; tests boxes for roots"
 {
     int N = nvars(basering);
@@ -1225,6 +1247,17 @@ EXAMPLE: example exclusionTestGroebner; for intersection of two ellipses"
 example
 {
     "EXAMPLE:"; echo = 2;
-    // TODO
+
+    ring R = 0,(x,y),lp;
+    ideal I = 2x2-xy+2y2-2,2x2-3xy+3y2-2;  // V(I) has four elements
+
+    interval i = bounds(-3/2,3/2);
+    box B = list(i, i);
+
+    list result = exclusionTestGroebner(I, B, 1/512);
+    size(result[1]);
+    size(result[2]);
+
+    result;
 }
 // vim: ft=singular
