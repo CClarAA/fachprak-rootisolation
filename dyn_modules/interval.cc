@@ -2,6 +2,8 @@
 #include "Singular/blackbox.h"
 #include "interval.h"
 #include "Singular/ipshell.h" // for iiCheckTypes
+#include "Singular/links/ssiLink.h"
+
 
 /*
  * CONSTRUCTORS & DESTRUCTORS
@@ -665,6 +667,58 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2)
     return FALSE;
 }
 
+BOOLEAN interval_serialize(blackbox*, void *d, si_link f)
+{
+    /*
+     * Format: "interval" setring number number
+     */
+    interval *I = (interval*) d;
+
+    sleftv l, lo, up;
+    memset(&l, 0, sizeof(l));
+    memset(&lo, 0, sizeof(lo));
+    memset(&up, 0, sizeof(up));
+
+    l.rtyp = STRING_CMD;
+    l.data = (void*) "interval";
+
+    lo.rtyp = NUMBER_CMD;
+    lo.data = (void*) I->lower;
+
+    up.rtyp = NUMBER_CMD;
+    up.data = (void*) I->upper;
+
+    f->m->Write(f, &l);
+
+    ring R = I->R;
+
+    f->m->SetRing(f, R, TRUE);
+    f->m->Write(f, &lo);
+    f->m->Write(f, &up);
+
+    // no idea
+    if (R != currRing)
+        f->m->SetRing(f, currRing, FALSE);
+
+    return FALSE;
+}
+
+BOOLEAN interval_deserialize(blackbox**, void **d, si_link f)
+{
+    leftv l;
+
+    l = f->m->Read(f);
+    l->next = f->m->Read(f);
+
+    number lo = (number) l->CopyD(),
+           up = (number) l->next->CopyD();
+
+    l->CleanUp();
+
+    *d = (void*) new interval(lo, up);
+    return FALSE;
+}
+
 /*
  * BOX FUNCTIONS
  */
@@ -742,11 +796,29 @@ BOOLEAN box_Assign(leftv result, leftv args)
             {
                 Werror("list contains non-intervals");
                 delete RES;
+                args->CleanUp();
                 return TRUE;
             }
             // delete interval before overwriting it.
             delete RES->intervals[i];
-            RES->intervals[i] = new interval((interval*) l->m[i].Data());
+            RES->intervals[i] = (interval*) l->m[i].CopyD();
+
+            // make sure rings of boxes and their intervals are consistent
+            // this is important for serialization
+            if (RES->R != RES->intervals[i]->R)
+            {
+                if (RES->R->cf != RES->intervals[i]->R->cf)
+                {
+                    Werror("Passing interval to ring with different coeffiecient field");
+                    delete RES;
+                    args->CleanUp();
+                    return TRUE;
+                }
+
+                RES->intervals[i]->R->ref--;
+                RES->R->ref++;
+                RES->intervals[i]->R = RES->R;
+            }
         }
     }
     else
@@ -967,6 +1039,64 @@ BOOLEAN box_OpM(int op, leftv result, leftv args)
     }
 }
 
+BOOLEAN box_serialize(blackbox*, void *d, si_link f)
+{
+    /*
+     * Format: "box" setring interval[1] .. interval[N]
+     */
+    box *B = (box*) d;
+    int N = B->R->N, i;
+    sleftv l, iv;
+    memset(&l, 0, sizeof(l));
+    memset(&iv, 0, sizeof(iv));
+
+    l.rtyp = STRING_CMD;
+    l.data = (void*) "box";
+
+    f->m->Write(f, &l);
+
+    f->m->SetRing(f, B->R, TRUE);
+
+    iv.rtyp = intervalID;
+    for (i = 0; i < N; i++)
+    {
+        iv.data = (void*) B->intervals[i];
+        f->m->Write(f, &iv);
+    }
+
+    if (currRing != B->R)
+        f->m->SetRing(f, currRing, FALSE);
+
+    return FALSE;
+}
+
+BOOLEAN box_deserialize(blackbox**, void **d, si_link f)
+{
+    leftv l;
+
+    // read once to set ring
+    l = f->m->Read(f);
+
+    ring R = currRing;
+    int i, N = R->N;
+    box *B = new box();
+
+    delete B->intervals[0];
+    B->intervals[0] = (interval*) l->CopyD();
+    l->CleanUp();
+
+    for (i = 1; i < N; i++)
+    {
+        l = f->m->Read(f);
+        delete B->intervals[i];
+        B->intervals[i] = (interval*) l->CopyD();
+        l->CleanUp();
+    }
+
+    *d = (void*) B;
+    return FALSE;
+}
+
 BOOLEAN boxSet(leftv result, leftv args)
 {
     assume(result->Typ() == boxID);
@@ -994,6 +1124,22 @@ BOOLEAN boxSet(leftv result, leftv args)
     delete RES->intervals[i-1];
     RES->intervals[i-1] = new interval(I);
 
+    // same as above, ensure ring consistency
+    if (RES->R != RES->intervals[i-1]->R)
+    {
+        if (RES->R->cf != RES->intervals[i-1]->R->cf)
+        {
+            Werror("Passing interval to ring with different coeffiecient field");
+            delete RES;
+            args->CleanUp();
+            return TRUE;
+        }
+
+        RES->intervals[i]->R->ref--;
+        RES->R->ref++;
+        RES->intervals[i]->R = RES->R;
+    }
+
     result->rtyp = boxID;
     result->data = (void*) RES;
     args->CleanUp();
@@ -1008,13 +1154,11 @@ BOOLEAN evalPolyAtBox(leftv result, leftv args)
 {
     assume(result->Typ() == intervalID);
 
-#ifndef SING_NDEBUG
     const short t[] = {2, POLY_CMD, (short) boxID};
     if (!iiCheckTypes(args, t, 1))
     {
         return TRUE;
     }
-#endif
 
     poly p = (poly) args->Data();
     box *B = (box*) args->next->Data();
@@ -1069,25 +1213,29 @@ BOOLEAN evalPolyAtBox(leftv result, leftv args)
 
 extern "C" int mod_init(SModulFunctions* psModulFunctions)
 {
-    blackbox *b_iv = (blackbox*)omAlloc0(sizeof(blackbox)),
-             *b_bx = (blackbox*)omAlloc0(sizeof(blackbox));
+    blackbox *b_iv = (blackbox*) omAlloc0(sizeof(blackbox)),
+             *b_bx = (blackbox*) omAlloc0(sizeof(blackbox));
 
-    b_iv->blackbox_Init    = interval_Init;
-    b_iv->blackbox_Copy    = interval_Copy;
-    b_iv->blackbox_destroy = interval_Destroy;
-    b_iv->blackbox_String  = interval_String;
-    b_iv->blackbox_Assign  = interval_Assign;
-    b_iv->blackbox_Op2     = interval_Op2;
+    b_iv->blackbox_Init        = interval_Init;
+    b_iv->blackbox_Copy        = interval_Copy;
+    b_iv->blackbox_destroy     = interval_Destroy;
+    b_iv->blackbox_String      = interval_String;
+    b_iv->blackbox_Assign      = interval_Assign;
+    b_iv->blackbox_Op2         = interval_Op2;
+    b_iv->blackbox_serialize   = interval_serialize;
+    b_iv->blackbox_deserialize = interval_deserialize;
 
     intervalID = setBlackboxStuff(b_iv, "interval");
 
-    b_bx->blackbox_Init    = box_Init;
-    b_bx->blackbox_Copy    = box_Copy;
-    b_bx->blackbox_destroy = box_Destroy;
-    b_bx->blackbox_String  = box_String;
-    b_bx->blackbox_Assign  = box_Assign;
-    b_bx->blackbox_Op2     = box_Op2;
-    b_bx->blackbox_OpM     = box_OpM;
+    b_bx->blackbox_Init        = box_Init;
+    b_bx->blackbox_Copy        = box_Copy;
+    b_bx->blackbox_destroy     = box_Destroy;
+    b_bx->blackbox_String      = box_String;
+    b_bx->blackbox_Assign      = box_Assign;
+    b_bx->blackbox_Op2         = box_Op2;
+    b_bx->blackbox_OpM         = box_OpM;
+    b_bx->blackbox_serialize   = box_serialize;
+    b_bx->blackbox_deserialize = box_deserialize;
 
     boxID = setBlackboxStuff(b_bx, "box");
 
