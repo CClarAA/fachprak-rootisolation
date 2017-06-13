@@ -27,5 +27,6 @@ example testPolyBox;
 example evalIdealAtBox;
 example exclusionTest;
 example noRootsOnBoundary;
+example exclusionTestGroebner;
 
 quit;

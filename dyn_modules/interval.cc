@@ -4,7 +4,6 @@
 #include "Singular/ipshell.h" // for iiCheckTypes
 #include "Singular/links/ssiLink.h"
 
-
 /*
  * CONSTRUCTORS & DESTRUCTORS
  */
@@ -469,7 +468,7 @@ BOOLEAN interval_Op2(int op, leftv result, leftv i1, leftv i2)
                     case INT_CMD:
                         { n = nInit((int)(long) iscalar->Data()); break; }
                     case NUMBER_CMD:
-                        { n = nCopy((number) iscalar->Data()); break; }
+                        { n = (number) iscalar->CopyD(); break; }
                     default:
                         { Werror("first argument not int/number/interval"); return TRUE; }
                 }
@@ -754,7 +753,7 @@ char* box_String(blackbox*, void *d)
 
     for (i = 1; i < n; i++)
     {
-        // interpret box as cartesian product, hence use " x "
+        // interpret box as Cartesian product, hence use " x "
         StringAppendS(" x ");
         StringAppendS(interval_String(b_i, (void*) B->intervals[i]));
     }
@@ -809,7 +808,7 @@ BOOLEAN box_Assign(leftv result, leftv args)
             {
                 if (RES->R->cf != RES->intervals[i]->R->cf)
                 {
-                    Werror("Passing interval to ring with different coeffiecient field");
+                    Werror("Passing interval to ring with different coefficient field");
                     delete RES;
                     args->CleanUp();
                     return TRUE;
@@ -958,16 +957,11 @@ BOOLEAN box_Op2(int op, leftv result, leftv b1, leftv b2)
 
 BOOLEAN box_OpM(int op, leftv result, leftv args)
 {
-    leftv a=args;
+    leftv a = args;
     switch(op)
     {
         case INTERSECT_CMD:
         {
-            if (result->Data() != NULL && result->Typ() == boxID)
-            {
-                delete (box*) result->Data();
-            }
-
             if (args->Typ() != boxID)
             {
                 Werror("can only intersect boxes");
@@ -1024,11 +1018,6 @@ BOOLEAN box_OpM(int op, leftv result, leftv args)
                 RES->intervals[i] = new interval(nCopy(lowerb[i]), nCopy(upperb[i]));
             }
 
-            if (result->Data() != NULL && result->Typ() == boxID)
-            {
-                delete (box*) result->Data();
-            }
-
             result->rtyp = boxID;
             result->data = (void*) RES;
             a->CleanUp();
@@ -1042,7 +1031,7 @@ BOOLEAN box_OpM(int op, leftv result, leftv args)
 BOOLEAN box_serialize(blackbox*, void *d, si_link f)
 {
     /*
-     * Format: "box" setring interval[1] .. interval[N]
+     * Format: "box" setring intervals[1] .. intervals[N]
      */
     box *B = (box*) d;
     int N = B->R->N, i;
@@ -1129,7 +1118,7 @@ BOOLEAN boxSet(leftv result, leftv args)
     {
         if (RES->R->cf != RES->intervals[i-1]->R->cf)
         {
-            Werror("Passing interval to ring with different coeffiecient field");
+            Werror("Passing interval to ring with different coefficient field");
             delete RES;
             args->CleanUp();
             return TRUE;
