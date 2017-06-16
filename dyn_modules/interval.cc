@@ -92,6 +92,17 @@ box::~box()
     R->ref--;
 }
 
+// does not copy
+box& box::setInterval(int i, interval *I)
+{
+    if (0 <= i && i < R->N)
+    {
+        delete intervals[i];
+        intervals[i] = I;
+    }
+    return *this;
+}
+
 /*
  * TYPE IDs
  */
@@ -798,9 +809,7 @@ BOOLEAN box_Assign(leftv result, leftv args)
                 args->CleanUp();
                 return TRUE;
             }
-            // delete interval before overwriting it.
-            delete RES->intervals[i];
-            RES->intervals[i] = (interval*) l->m[i].CopyD();
+            RES->setInterval(i, (interval*) l->m[i].CopyD());
 
             // make sure rings of boxes and their intervals are consistent
             // this is important for serialization
@@ -911,8 +920,7 @@ BOOLEAN box_Op2(int op, leftv result, leftv b1, leftv b2)
             int i;
             for (i = 0; i < n; i++)
             {
-                delete RES->intervals[i];
-                RES->intervals[i] = intervalSubtract(B1->intervals[i], B2->intervals[i]);
+                RES->setInterval(i, intervalSubtract(B1->intervals[i], B2->intervals[i]));
             }
 
             if (result->Data() != NULL)
@@ -1014,8 +1022,7 @@ BOOLEAN box_OpM(int op, leftv result, leftv args)
             box *RES = new box();
             for (i = 0; i < n; i++)
             {
-                delete RES->intervals[i];
-                RES->intervals[i] = new interval(nCopy(lowerb[i]), nCopy(upperb[i]));
+                RES->setInterval(i, new interval(nCopy(lowerb[i]), nCopy(upperb[i])));
             }
 
             result->rtyp = boxID;
@@ -1070,15 +1077,13 @@ BOOLEAN box_deserialize(blackbox**, void **d, si_link f)
     int i, N = R->N;
     box *B = new box();
 
-    delete B->intervals[0];
-    B->intervals[0] = (interval*) l->CopyD();
+    B->setInterval(0, (interval*) l->CopyD());
     l->CleanUp();
 
     for (i = 1; i < N; i++)
     {
         l = f->m->Read(f);
-        delete B->intervals[i];
-        B->intervals[i] = (interval*) l->CopyD();
+        B->setInterval(0, (interval*) l->CopyD());
         l->CleanUp();
     }
 
@@ -1109,9 +1114,7 @@ BOOLEAN boxSet(leftv result, leftv args)
 
     box *RES = new box(B);
 
-    // replace interval, free space
-    delete RES->intervals[i-1];
-    RES->intervals[i-1] = new interval(I);
+    RES->setInterval(i-1, new interval(I));
 
     // same as above, ensure ring consistency
     if (RES->R != RES->intervals[i-1]->R)

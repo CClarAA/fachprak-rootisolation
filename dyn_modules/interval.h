@@ -24,6 +24,8 @@ struct box
     box();
     box(box*);
     ~box();
+
+    box& setInterval(int, interval*);
 };
 
 extern int intervalID;
