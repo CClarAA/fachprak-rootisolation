@@ -1,26 +1,7 @@
 LIB "interval.lib";
 
-example intervalAssign;
-example intervalGet;
-example intervalEqual;
-example length;
-example intervalString;
-example intervalPrint;
-example intervalAdd;
-example intervalNegate;
-example intervalSubtract;
-example intervalMultiply;
-example intervalDivide;
-example intervalPotentiate;
-
-example boxAssign;
-example boxSet;
-example boxPrint;
-example boxGet;
-example boxEqual;
 example lengthBox;
 example splitBox;
-example boxIntersect;
 example boxIsinterior;
 
 example ivmatInit;
@@ -45,5 +26,7 @@ example evalJacobianAtBox;
 example testPolyBox;
 example evalIdealAtBox;
 example exclusionTest;
+example noRootsOnBoundary;
+example exclusionTestGroebner;
 
 quit;
