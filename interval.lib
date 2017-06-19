@@ -15,18 +15,19 @@ det         determinant           determinant
 *           ivmatMultiplyGeneral  matrix multiplication
 
 PROCEDURES:
-ivmatrixInit(m, n)      returns m x n [0,0]-matrix
-unitMatrix(m)           returns m x m unit matrix where 1 = [1,1]
-ivmatGaussian(M)        computes M^(-1) using Gaussian elimination for intervals
+ivmatInit(m, n);         returns m x n [0,0]-matrix
+unitMatrix(m);           returns m x m unit matrix where 1 = [1,1]
+ivmatGaussian(M);        computes M^(-1) using Gaussian elimination for intervals
 
-rootIsolationNoPreprocessing(I,L,e)
-                        computes boxes containing unique roots of I lying in L
-rootIsolation(I,B,e)    slims down input box B and calls rootIsolationNoPreprocessing
+rootIsolationNoPreprocessing(I,L,e);
+                         computes boxes containing unique roots of I lying in L
+rootIsolation(I,B,e);    slims down input box B and calls rootIsolationNoPreprocessing
 ";
 ///////////////////////////////////////////////////////////////////////////////
 
 static proc mod_init()
 {
+    //LIB "interval.so"; // use this if integrated into Singular Sources
     LIB "dyn_modules/interval.so";
     LIB "atkins.lib"; // for round (tmp?)
 
@@ -43,10 +44,7 @@ static proc mod_init()
 
 // INTERVAL FUNCTIONS
 
-proc bounds(number a, list #)
-"USAGE: bounds(a), bounds(a,b), a, b number
-RETURN: interval I = [a,b]
-EXAMPLE: example bounds; creates interval from bounds"
+static proc bounds(number a, list #)
 {
     interval I;
     if (size(#) == 0)
@@ -61,20 +59,11 @@ EXAMPLE: example bounds; creates interval from bounds"
     }
     ERROR("syntax: bounds(<number>) or bounds(<number>, <number>)");
 }
-example
-{
-    "EXAMPLE:"; echo = 2;
-    ring R = 0,x,lp;
-    interval I = bounds(0,1);
-    interval J = bounds(1/17, 99/6);
-
-    I; J;
-}
 
 // BOX FUNCTIONS
 
 proc lengthBox(box B)
-"USAGE: length(B), B box
+"USAGE:  length(B), B box
 RETURN: length/size in measure sense
 EXAMPLE: example lengthBox; computes length of boxes"
 {
@@ -102,7 +91,7 @@ example
 }
 
 proc boxCenter(box M)
-"USAGE: boxCenter(M), M ivmat
+"USAGE: boxCenter(M); M ivmat
 RETURN: box containing center elements of M
 EXAMPLE: example boxCenter; computes center box"
 {
@@ -131,8 +120,11 @@ example
 }
 
 proc splitBox(box B, ideal I)
-"USAGE: splitBox(box, I), box list of intervals, I ideal
-RETURN: new list of smaller boxes, such that intersection of borders does not contain zeros of I
+"USAGE:  splitBox(box, I); box list of intervals, I ideal
+RETURN: new list of smaller boxes, such that intersection of borders does not
+        contain zeros of I
+NOTE:   this uses exclusion tests and Groebner bases to determine whether the
+        intersection plane contains a root of I
 EXAMPLE: example splitBox; splits two-dimensional interval into two"
 {
     // at first split only at largest interval
@@ -198,8 +190,8 @@ example
 }
 
 proc boxIsInterior(box A, box B)
-"USAGE: boxIsInterior(A, B), A, B box
-RETURN: 1 if A contained in int(B) else 0
+"USAGE: boxIsInterior(A, B); A, B box
+RETURN: 1 if A contained in int(B), else 0
 EXAMPLE: example boxIsInterior; check whether A is contained in int(B)"
 {
     int N = nvars(basering);
@@ -272,20 +264,9 @@ example
     nrows(A);
 }
 
-proc ivmatNcols(ivmat M)
-"USAGE: ncols(M), M ivmat
-RETURN: number of columns of M
-EXAMPLE: example ivmatNcols; return number of columns"
+static proc ivmatNcols(ivmat M)
 {
     return(size(M.rows[1]));
-}
-example
-{
-    "EXAMPLE:"; echo = 2;
-    ring R = 0,x,lp;
-
-    ivmat A = ivmatInit(2,3);
-    ncols(A);
 }
 
 proc ivmatAssign(int m, int n, list #)
@@ -415,179 +396,7 @@ example
     ivmat E = unitMatrix(4); E;
 }
 
-proc determinant(ivmat A)
-"USAGE: det(A), A ivmat
-RETURN: determinant calculated by standard interval arithmetic
-EXAMPLE: example determinant; calculates a determinant"
-{
-    int n = ncols(A);
-    if (n == 1)
-    {
-        return(A[1][1]);
-    }
-
-    interval I = 0;
-    for (int i = 1; i <= n; i++)
-    {
-        I = I + A[1][i] * cofactor(A, 1, i);
-    }
-    return(I);
-}
-example
-{
-    "EXAMPLE:"; echo = 2;
-    ring R = 0,x,lp;
-
-    ivmat E = unitMatrix(3); E;
-    det(E);
-
-    E = diagMatrix(3, bounds(2, 5/2)); E;
-    det(E);
-
-    interval I = bounds(1/3, 4/3);
-    ivmat A = ivmatAssign(2, 2, I, I+interval(1), I+interval(2), I^2); A;
-    det(A);
-}
-
-proc cofactor(ivmat A, int i, int j)
-"USAGE: cofactor(A, i, j), A ivmat, i, j int
-RETURN: cofactor of A at position (i,j)
-EXAMPLE: example cofactor; compute cofactors"
-{
-    int n = ncols(A);
-    if (n == 1) { return(A[1][1]); }
-
-    ivmat M = ivmatInit(n-1, n-1);
-
-    // create m-1 x n-1 submatrix (minor) without row i, column j
-    int k, l;
-    for (k = 1; k < n; k++)
-    {
-        for (l = 1; l < n; l++)
-        {
-            M.rows[k][l] = A[k + (k>=i)][l + (l>=j)];
-        }
-    }
-
-    return( (-1)^(i+j) * det(M) );
-}
-example
-{
-    "EXAMPLE:"; echo = 2;
-    ring R = 0,x,lp;
-
-    interval I = bounds(1, 2);
-    interval J = bounds(2, 5/2);
-    interval z = 0;
-
-    ivmat A = ivmatAssign(2,2,I,z,z,J); A;
-
-    cofactor(A, 2, 1);
-}
-
-proc adjunct(ivmat A)
-"USAGE: adjuct(A), A ivmat
-RETURN: adjuct matrix i.e. transpose cofactor matrix
-EXAMPLE: example adjunct; compute adjunct matrix"
-{
-    int n = size(A[1]);
-    ivmat adj = ivmatInit(n, n);
-
-    int i, j;
-    for (i = 1; i <= n; i++)
-    {
-        for (j = 1; j <= n; j++)
-        {
-            adj.rows[i][j] = cofactor(A, j, i);
-        }
-    }
-
-    return(adj);
-}
-example
-{
-    "EXAMPLE:"; echo = 2;
-    ring R = 0,x,lp;
-
-    interval I = bounds(1, 2);
-    interval J = bounds(2, 5/2);
-    interval z = 0;
-
-    ivmat A = ivmatAssign(2,2,I,z,z,J); A;
-
-    adjunct(A);
-}
-
-proc ivmatCenter(ivmat M)
-"USAGE: ivmatCenter(M), M ivmat
-RETURN: martix containing center elements of M
-EXAMPLE: example ivmatCenter; compute center matrix"
-{
-    int m = nrows(M);
-    int n = ncols(M);
-
-    matrix C[m][n];
-    int i, j;
-
-    for (i = 1; i <= m; i++)
-    {
-        for (j = 1; j <= n; j++)
-        {
-            C[i, j] = (M[i][j][1] + M[i][j][2])/2;
-        }
-    }
-
-    return(C);
-}
-example
-{
-    "EXAMPLE:"; echo = 2;
-    ring R = 0,x,lp;
-
-    interval I = bounds(1/3, 7/4);
-    ivmat M = diagMatrix(3, I);
-    M = ivmatSet(M, 3, 2, bounds(1, 3/2)); M;
-
-    ivmatCenter(M);
-}
-
-proc ivmatRadius(ivmat M)
-"USAGE: ivmatRadius(M), M ivmat
-RETURN: martix containing radius elements of M
-EXAMPLE: example ivmatRadius; compute radius matrix"
-{
-    int m = nrows(M);
-    int n = ncols(M);
-
-    matrix C[m][n];
-    int i, j;
-
-    for (i = 1; i <= m; i++)
-    {
-        for (j = 1; j <= n; j++)
-        {
-            C[i, j] = length(M[i][j])/2;
-        }
-    }
-
-    return(C);
-}
-example
-{
-    "EXAMPLE"; echo = 2;
-    ring R = 0,x,lp;
-
-    interval I = bounds(1/3, 7/4);
-    ivmat M = diagMatrix(3, I);
-    M = ivmatSet(M, 3, 2, bounds(1, 3/2)); M;
-
-    ivmatRadius(M);
-}
-
 static proc ivmatMultiply(ivmat A, ivmat B)
-"USAGE: A*B, A, B ivmat
-RETURN: matrix product of A and B
-EXAMPLE: example ivmatMultiply; multiply matrices"
 {
     int m = nrows(A);
     int n = ncols(B);
@@ -617,32 +426,9 @@ EXAMPLE: example ivmatMultiply; multiply matrices"
 
     return(C);
 }
-example
-{
-    "EXAMPLE:"; echo = 3;
-    ring R = 0,x,lp;
-
-    interval I = bounds(0, 1);
-    ivmat E = ivmatInit(3,3);
-    for (int i = 1; i<=3; i++) { E = ivmatSet(E, i, i, I+interval(i)); } E;
-
-    interval z = 0;
-    interval J1 = bounds(1/3, 3/7);
-    interval J2 = bounds(2, 5/2);
-    interval J3 = bounds(6/7, 8/7);
-    interval J4 = bounds(1, 2);
-
-    ivmat A = ivmatAssign(3,3, J1, z, J2, J3, J3^2, z, z, J4, J2*J4); A;
-
-    E * A;
-    A * E;
-
-    A * adjunct(A);
-    det(A);
-}
 
 proc ivmatGaussian(ivmat A)
-"USAGE: ivmatGaussian(A) A ivmat
+"USAGE:  ivmatGaussian(A); A ivmat
 RETURN: 0 if A not invertible, 1,Ainv if A invertible
 EXAMPLE: example ivmatGaussian; invert a matrix using Gauss elimination"
 {
@@ -724,17 +510,9 @@ example
     Jinv;
 
     Jinv * J;
-
-    ivmat Jadj = diagMatrix(2, 1/det(J)) * adjunct(J);
-    Jadj;
-
-    Jadj * J;
 }
 
 static proc applyMatrix(ivmat A, box b)
-"USAGE: A * b, A ivmat, b box
-RETURN: A*b
-EXAMPLE: example applyMatrix; apply matrix to box"
 {
     int n = nvars(basering);
 
@@ -759,26 +537,8 @@ EXAMPLE: example applyMatrix; apply matrix to box"
 
     return(box(result));
 }
-example
-{
-    "EXAMPLE:"; echo = 3;
-    ring R = 0,(x,y,z),lp;
-
-    ideal I = xyz3+z2y2+x,x4+y3+2z+3,xyz+1/2;
-    interval J = bounds(1/2, 3/2);
-    box B = list(J,J,J);
-
-    ivmat A = evalJacobianAtBox(I, B); A;
-    A*B;
-
-    unitMatrix(3) * B;
-
-    diagMatrix(3, bounds(0, 1)) * B;
-}
 
 static proc ivmatMultiplyGeneral(ivmat A, B)
-"USAGE: A * B, A ivmat, B ivmat or box
-RETURN: usual matrix product where box is a nx1 matrix"
 {
     if (typeof(B) == "ivmat")
     {
@@ -796,8 +556,8 @@ RETURN: usual matrix product where box is a nx1 matrix"
 // POLYNOMIAL APPLICATIONS
 
 proc evalJacobianAtBox(ideal I, box B)
-"USAGE: evalJacobianAtBox(I, B), I ideal B box
-RETURN: jacobian matrix of I where polynomials are evaluated at the given box
+"USAGE: evalJacobianAtBox(I, B); I ideal B box
+RETURN: jacobian matrix of I where polynomials are evaluated at B
 EXAMPLE: example evalJacobianAtBox; evalate Jacobian at box"
 {
     matrix J = jacob(I);
@@ -827,12 +587,14 @@ example
 }
 
 proc testPolyBox(ideal I, box B)
-"USAGE: testPolyBox(I, B), I ideal, B box
+"USAGE:  testPolyBox(I, B); I ideal, B box
 RETURN: list(int, box):
         -1, if ideal has no zeros in given box,
         1, if unique zero in given box
         0 if test is inconclusive;
-        box is intersection of Newton step and supplied box
+        box is intersection of Newton step and supplied box if applicable
+NOTE:   rounding is performed on fractions obtained by intersecting to prevent
+        the size of denominators and numerators from increasing dramatically
 EXAMPLE: example testPolyBox; tests the above for intersection of ellipses."
 {
     int N = nvars(basering);
@@ -944,8 +706,10 @@ example
 }
 
 proc evalIdealAtBox(ideal I, box B)
-"USAGE: evaluate ideal at list of intervals i.e. at a box
-RETURN: list
+"USAGE:  evalIdealAtBox(I, B); I ideal, B box;
+ASSUME: ncols(I) <= nvars(basering), as boxes have exactly nvars(basering)
+        entries
+RETURN: box which results from evaluating each polynomial in I at B
 EXAMPLE: example evalIdealAtBox; evaluates an ideal at a box"
 {
     list resu;
@@ -972,9 +736,12 @@ example
     evalIdealAtBox(I, intervals);
 }
 
-proc rootIsolationNoPreprocessing(ideal I, def start, number limitsize)
-"USAGE: exclusion test for roots with interval arithmetic
-RETURN: list of boxes
+proc rootIsolationNoPreprocessing(ideal I, def start, number eps)
+"USAGE:  rootIsolationNoPreprocessing(I, B, eps); I ideal, B box/list of boxes, eps number;
+ASSUME: I is a zero-dimensional radical ideal
+RETURN: L1, L2, where L1 contains boxes smaller than eps which may contain an
+        element of V(I), i.e. a root and L2 contains boxes which contain
+        exactly one element of V(I)
 EXAMPLE: example rootIsolationNoPreprocessing; exclusion test for intersection of two ellipses"
 {
     //set of boxes smaller than size
@@ -1026,9 +793,8 @@ EXAMPLE: example rootIsolationNoPreprocessing; exclusion test for intersection o
             }
             if (zeroTest == 0)
             {
-                //case that box is smaller than the input limitsize
-                // remove first case if limitsize == 0?
-                if (lengthBox(B[i]) < limitsize)
+                // case that box is smaller than the input limit eps
+                if (lengthBox(B[i]) < eps)
                 {
                     B_size[size(B_size)+1] = B[i];
                 }
@@ -1067,9 +833,9 @@ example
 }
 
 proc noRootsOnBoundary(ideal I, box B)
-"USAGE: noZeroesOnBoundary(I, B), I ideal, B box
-RETURN: intvec containing 1 if I has no roots on the boundary of B,
-        0 if there may be such roots for all 2*nvars(basering) boundaries
+"USAGE:  noZeroesOnBoundary(I, B), I ideal, B box
+RETURN: intvec iv where:
+        iv[i] == 1 if there is no root of I on the boundary of B[i], 0 else
 EXAMPLE: example noRootsOnBoundary; tests boxes for roots"
 {
     int N = nvars(basering);
@@ -1116,9 +882,13 @@ example
 
 //im Moment geht das nur mit eingegebener eliminationsordnung
 proc rootIsolation(ideal I, box start, number eps)
-"USAGE: exclusiontest first for only one variable (using elimination ordering
-        lp) and then use good starting boxes
-RETURN: list of boxes
+"USAGE:  rootIsolation(I, start, eps); I ideal, start box, eps number
+ASSUME: I is a zero-dimensional radical ideal
+RETURN: L1, L2, where L1 contains boxes smaller than eps which may contain an
+        element of V(I), i.e. a root and L2 contains boxes which contain
+        exactly one element of V(I)
+NOTE:   this procedure uses elimination to find smaller starting intervals for
+        all ring variables and then calls rootIsolationNoPreprocessing
 EXAMPLE: example rootIsolation; for intersection of two ellipses"
 {
     int N = nvars(basering);
