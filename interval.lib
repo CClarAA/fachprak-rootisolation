@@ -1,28 +1,30 @@
-///////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 version="version interval.lib 0.1 Apr_2017 ";
 info="
 LIBRARY:    rootIsolation.lib implements an algorithm for real root isolation using interval arithmetic
 AUTHORS:    Dominik Bendle
-            Clara Petroll
+@*          Clara Petroll
 
-OVERVIEW:   In this library the interval arithmetic from interval.so is used. 
-	   		The new type "ivmat", a matrix consiting of intervals is implemented as newstruct. 
-	   		There are various functions for computations with interval matrices implemented, 
-	   		such as Gaussian elimination for interval matrices.
-            Interval arithmetic, the interval Newton Step and exclusion methods are used 
-            to implement the procedure "realRootIsolation", an algorithm which finds boxes
-            containing elements of the vanishing locus of an ideal.
-            This algorithm is specialised for zero-dimensional radical ideals. 
-            The theory about the interval Newton Step is referred to [2].
-            
-REFERENCES: [1] Cloud, Kearfott, Moore: Introduction to Interval Analysis, Society for 
-                        Industrial and Applied Mathematics, 2009
-            [2] Eisenbud, Grayson, Herzog, Stillman, Vasconcelos: Computational Methods in 
-            			Commutative Algebra and Algebraic 
-                        Geometry, Springer Verlag Berlin-Heidelberg, 3. edition 2004
-            [3] Andrew J. Sommese and Charles W. Wampler: The Numerical Solution of Systems of 
-            			Polynomials - Arising in Engineering and Science, 
-            			World Scientific Publishing Co. Pte. Ltd., 2005
+OVERVIEW:   In this library the interval arithmetic from interval.so is used.
+            The new type 'ivmat', a matrix consiting of intervals is
+            implemented as newstruct. There are various functions for
+            computations with interval matrices implemented, such as Gaussian
+            elimination for interval matrices.
+            Interval arithmetic, the interval Newton Step and exclusion methods
+            are used to implement the procedure 'realRootIsolation', an
+            algorithm which finds boxes containing elements of the vanishing
+            locus of an ideal. This algorithm is specialised for
+            zero-dimensional radical ideals. The theory about the interval
+            Newton Step is detailed in [2].
+
+REFERENCES: [1] Cloud, Kearfott, Moore: Introduction to Interval Analysis, Society for
+                Industrial and Applied Mathematics, 2009
+@*          [2] Eisenbud, Grayson, Herzog, Stillman, Vasconcelos: Computational
+                Methods in Commutative Algebra and Algebraic Geometry, Springer
+                Verlag Berlin-Heidelberg, 3. edition 2004
+@*          [3] Andrew J. Sommese and Charles W. Wampler: The Numerical
+                Solution of Systems of Polynomials - Arising in Engineering and
+                Science, World Scientific Publishing Co. Pte. Ltd., 2005
 
 OVERLOADS:
 // interval matrices
@@ -239,7 +241,7 @@ example
 // MATRIX FUNCTIONS
 
 proc ivmatInit(numrows, numcols)
-"USAGE: ivmatInit(m, n) m, n int
+"USAGE: ivmatInit(m, n); m, n int
 RETURN: mxn matrix of [0,0]-intervals
 EXAMPLE: example ivmatInit; initialises an interval matrix"
 {
@@ -903,6 +905,7 @@ example
 proc rootIsolation(ideal I, box start, number eps)
 "USAGE:  rootIsolation(I, start, eps); I ideal, start box, eps number
 ASSUME: I is a zero-dimensional radical ideal
+        and basering is defined with an elimination ordering;
 RETURN: L1, L2, where L1 contains boxes smaller than eps which may contain an
         element of V(I), i.e. a root and L2 contains boxes which contain
         exactly one element of V(I)
