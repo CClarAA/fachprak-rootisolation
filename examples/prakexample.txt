@@ -24,5 +24,5 @@ box B = list(I,I,I,I, bounds(0,2));
 
 timer = 1;
 int t = timer;
-list result = exclusionTestGroebner(J, B, 0);
+list result = rootIsolation(J, B, 0);
 print(string(size(result[2]), " results in ", timer - t, " ms"));

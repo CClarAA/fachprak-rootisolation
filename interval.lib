@@ -7,20 +7,21 @@ AUTHORS:    Dominik Bendle
 
 OVERLOADS:
 // interval matrices
-[           ivmatGet            indexing
-print       ivmatPrint          printing
-nrows       ivmatNrows          number of rows
-ncols       ivmatNcols          number of columns
-det         determinant         determinant
-*           ivmatMultiply       matrix multiplication
+[           ivmatGet              indexing
+print       ivmatPrint            printing
+nrows       ivmatNrows            number of rows
+ncols       ivmatNcols            number of columns
+det         determinant           determinant
+*           ivmatMultiplyGeneral  matrix multiplication
 
 PROCEDURES:
-intervalmatrixInit      initialises an interval matrix
-unitMatrix              unit matrix
-applyMatrix             apply matrix to box
-ivmatGaussian           Gaussian elimination on matrices
+ivmatrixInit(m, n)      returns m x n [0,0]-matrix
+unitMatrix(m)           returns m x m unit matrix where 1 = [1,1]
+ivmatGaussian(M)        computes M^(-1) using Gaussian elimination for intervals
 
-exclusionTest           first version of our exclusion test
+rootIsolationNoPreprocessing(I,L,e)
+                        computes boxes containing unique roots of I lying in L
+rootIsolation(I,B,e)    slims down input box B and calls rootIsolationNoPreprocessing
 ";
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -59,6 +60,15 @@ EXAMPLE: example bounds; creates interval from bounds"
         return(I);
     }
     ERROR("syntax: bounds(<number>) or bounds(<number>, <number>)");
+}
+example
+{
+    "EXAMPLE:"; echo = 2;
+    ring R = 0,x,lp;
+    interval I = bounds(0,1);
+    interval J = bounds(1/17, 99/6);
+
+    I; J;
 }
 
 // BOX FUNCTIONS
@@ -574,7 +584,7 @@ example
     ivmatRadius(M);
 }
 
-proc ivmatMultiply(ivmat A, ivmat B)
+static proc ivmatMultiply(ivmat A, ivmat B)
 "USAGE: A*B, A, B ivmat
 RETURN: matrix product of A and B
 EXAMPLE: example ivmatMultiply; multiply matrices"
@@ -721,7 +731,7 @@ example
     Jadj * J;
 }
 
-proc applyMatrix(ivmat A, box b)
+static proc applyMatrix(ivmat A, box b)
 "USAGE: A * b, A ivmat, b box
 RETURN: A*b
 EXAMPLE: example applyMatrix; apply matrix to box"
@@ -766,10 +776,9 @@ example
     diagMatrix(3, bounds(0, 1)) * B;
 }
 
-proc ivmatMultiplyGeneral(ivmat A, B)
+static proc ivmatMultiplyGeneral(ivmat A, B)
 "USAGE: A * B, A ivmat, B ivmat or box
-RETURN: usual matrix product where box is a nx1 matrix
-EXAMPLE: example ivmatMultiplyGeneral; multiply matrices with matrices and boxes"
+RETURN: usual matrix product where box is a nx1 matrix"
 {
     if (typeof(B) == "ivmat")
     {
@@ -780,11 +789,6 @@ EXAMPLE: example ivmatMultiplyGeneral; multiply matrices with matrices and boxes
         return(applyMatrix(A, B));
     }
     ERROR("Type not supported.");
-}
-example
-{
-    example ivmatMultiply;
-    example applyMatrix;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -968,10 +972,10 @@ example
     evalIdealAtBox(I, intervals);
 }
 
-proc exclusionTest(ideal I, def start, number limitsize)
+proc rootIsolationNoPreprocessing(ideal I, def start, number limitsize)
 "USAGE: exclusion test for roots with interval arithmetic
 RETURN: list of boxes
-EXAMPLE: example exclusionTest; exclusion test for intersection of two ellipses"
+EXAMPLE: example rootIsolationNoPreprocessing; exclusion test for intersection of two ellipses"
 {
     //set of boxes smaller than size
     list B_size;
@@ -1055,7 +1059,7 @@ example
     interval i = bounds(-3/2,3/2);
     box B = list(i, i);
 
-    list result = exclusionTest(I, B, 1/512);
+    list result = rootIsolationNoPreprocessing(I, B, 1/512);
     size(result[1]);
     size(result[2]);
 
@@ -1111,11 +1115,11 @@ example
 }
 
 //im Moment geht das nur mit eingegebener eliminationsordnung
-proc exclusionTestGroebner(ideal I, box start, number eps)
+proc rootIsolation(ideal I, box start, number eps)
 "USAGE: exclusiontest first for only one variable (using elimination ordering
         lp) and then use good starting boxes
 RETURN: list of boxes
-EXAMPLE: example exclusionTestGroebner; for intersection of two ellipses"
+EXAMPLE: example rootIsolation; for intersection of two ellipses"
 {
     int N = nvars(basering);
     int i, j, k, l;
@@ -1145,7 +1149,7 @@ EXAMPLE: example exclusionTestGroebner; for intersection of two ellipses"
     // need at least two variables
     if (N < 2)
     {
-        return(exclusionTest(I, start, eps));
+        return(rootIsolationNoPreprocessing(I, start, eps));
     }
 
     // construct single variable ring from basering
@@ -1188,7 +1192,7 @@ EXAMPLE: example exclusionTestGroebner; for intersection of two ellipses"
 
     for (i = 1; i <= N; i++)
     {
-        univarResult = exclusionTest(ideal(gbUnivarPolys[i]), box(list(start[i])), eps);
+        univarResult = rootIsolationNoPreprocessing(ideal(gbUnivarPolys[i]), box(list(start[i])), eps);
         // maybe result[1] is not empty, so take both
         startBoxesPerDim[i] = univarResult[1] + univarResult[2];
         // debug:
@@ -1242,7 +1246,7 @@ EXAMPLE: example exclusionTestGroebner; for intersection of two ellipses"
         startBoxes[i] = box(sbTemp[i]);
     }
 
-    return(exclusionTest(I, startBoxes, eps));
+    return(rootIsolationNoPreprocessing(I, startBoxes, eps));
 }
 example
 {
@@ -1254,7 +1258,7 @@ example
     interval i = bounds(-3/2,3/2);
     box B = list(i, i);
 
-    list result = exclusionTestGroebner(I, B, 1/512);
+    list result = rootIsolation(I, B, 1/512);
     size(result[1]);
     size(result[2]);
 
