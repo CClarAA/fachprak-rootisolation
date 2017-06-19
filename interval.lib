@@ -36,7 +36,10 @@ det         determinant           determinant
 *           ivmatMultiplyGeneral  matrix multiplication
 
 PROCEDURES:
+bounds(a,#);			 creates a new interval with given bounds
 ivmatInit(m, n);         returns m x n [0,0]-matrix
+ivmatGet(A,i);			 returns the interval of the ith row of the matrix A
+ivmatSet(A,i,j,I);		 returns matrix A where A[i][j]=I
 unitMatrix(m);           returns m x m unit matrix where 1 = [1,1]
 ivmatGaussian(M);        computes M^(-1) using Gaussian elimination for intervals
 
@@ -57,7 +60,6 @@ static proc mod_init()
     system("install", "ivmat", "[",     ivmatGet,             2);
     system("install", "ivmat", "nrows", ivmatNrows,           1);
     system("install", "ivmat", "ncols", ivmatNcols,           1);
-    system("install", "ivmat", "det",   determinant,          1);
     system("install", "ivmat", "*",     ivmatMultiplyGeneral, 2);
 }
 
@@ -65,7 +67,10 @@ static proc mod_init()
 
 // INTERVAL FUNCTIONS
 
-static proc bounds(number a, list #)
+proc bounds(number a, list #)
+"USAGE: bounds(number a, list #), where either # is empty or contains exactly one number or int 
+RETURN: if size(#)==0 it returns the interval [a,a], else the interval [a,#[1]]
+EXAMPLE: example bounds; create two intervals"
 {
     interval I;
     if (size(#) == 0)
@@ -80,10 +85,20 @@ static proc bounds(number a, list #)
     }
     ERROR("syntax: bounds(<number>) or bounds(<number>, <number>)");
 }
+example
+{
+	echo=2;
+	ring R=0,x,lp;
+	interval I=bounds(1);
+	I;
+	
+	interval J=bounds(2/3,3);
+	J;
+}
 
 // BOX FUNCTIONS
 
-proc lengthBox(box B)
+static proc lengthBox(box B)
 "USAGE:  length(B), B box
 RETURN: length/size in measure sense
 EXAMPLE: example lengthBox; computes length of boxes"
@@ -111,7 +126,7 @@ example
     lengthBox(B);
 }
 
-proc boxCenter(box M)
+static proc boxCenter(box M)
 "USAGE: boxCenter(M); M ivmat
 RETURN: box containing center elements of M
 EXAMPLE: example boxCenter; computes center box"
@@ -140,7 +155,7 @@ example
     boxCenter(B);
 }
 
-proc splitBox(box B, ideal I)
+static proc splitBox(box B, ideal I)
 "USAGE:  splitBox(box, I); box list of intervals, I ideal
 RETURN: new list of smaller boxes, such that intersection of borders does not
         contain zeros of I
@@ -210,7 +225,7 @@ example
     splitBox(B,y-1); // contains zero on first splitting plane candidate
 }
 
-proc boxIsInterior(box A, box B)
+static proc boxIsInterior(box A, box B)
 "USAGE: boxIsInterior(A, B); A, B box
 RETURN: 1 if A contained in int(B), else 0
 EXAMPLE: example boxIsInterior; check whether A is contained in int(B)"
@@ -269,7 +284,7 @@ example
     ivmat A = ivmatInit(4, 5); A;
 }
 
-proc ivmatNrows(ivmat M)
+static proc ivmatNrows(ivmat M)
 "USAGE: nrows(M), M ivmat
 RETURN: number of rows of M
 EXAMPLE: example ivmatNrows; return number of rows"
@@ -334,7 +349,7 @@ example
     A;
 }
 
-proc ivmatPrint(ivmat A)
+static proc ivmatPrint(ivmat A)
 "USAGE: A; A ivmat
 RETURN: nothing
 EXAMPLE: example ivmatPrint; prints a matrix"
@@ -353,7 +368,7 @@ example
 proc ivmatGet(ivmat A, int i)
 "USAGE: A[i], A ivmat, i int
 RETURN: list A[i] of i-th row of A
-EXAMPLE: example ivmatGet; get single interals of matrix"
+EXAMPLE: example ivmatGet; get single intervals of matrix"
 {
     return(A.rows[i]);
 }
@@ -383,7 +398,7 @@ example
     A = ivmatSet(A, 1, 2, bounds(1, 2));  A;
 }
 
-proc diagMatrix(int n, interval I)
+static proc diagMatrix(int n, interval I)
 "USAGE: diagMatrix(n, I), n int, I interval
 RETURN: diagonal nxn-matrix E where E[i][i] == I for all 1 <= i <= n
 EXAMPLE: example diagMatrix; create diagonal matrix"
@@ -451,7 +466,8 @@ static proc ivmatMultiply(ivmat A, ivmat B)
 proc ivmatGaussian(ivmat A)
 "USAGE:  ivmatGaussian(A); A ivmat
 RETURN: 0 if A not invertible, 1,Ainv if A invertible
-EXAMPLE: example ivmatGaussian; invert a matrix using Gauss elimination"
+NOTE: inverts an interval matrix using Gussian elimination
+EXAMPLE: example ivmatGaussian "
 {
     int n = nrows(A);
     if (n <> ncols(A))
@@ -576,7 +592,7 @@ static proc ivmatMultiplyGeneral(ivmat A, B)
 
 // POLYNOMIAL APPLICATIONS
 
-proc evalJacobianAtBox(ideal I, box B)
+static proc evalJacobianAtBox(ideal I, box B)
 "USAGE: evalJacobianAtBox(I, B); I ideal B box
 RETURN: jacobian matrix of I where polynomials are evaluated at B
 EXAMPLE: example evalJacobianAtBox; evalate Jacobian at box"
@@ -607,7 +623,7 @@ example
     evalJacobianAtBox(I, list(J,J));
 }
 
-proc testPolyBox(ideal I, box B)
+static proc testPolyBox(ideal I, box B)
 "USAGE:  testPolyBox(I, B); I ideal, B box
 RETURN: list(int, box):
         -1, if ideal has no zeros in given box,
@@ -726,7 +742,7 @@ example
     testPolyBox(I, list(unit/2, unit/2));
 }
 
-proc evalIdealAtBox(ideal I, box B)
+static proc evalIdealAtBox(ideal I, box B)
 "USAGE:  evalIdealAtBox(I, B); I ideal, B box;
 ASSUME: ncols(I) <= nvars(basering), as boxes have exactly nvars(basering)
         entries
@@ -763,6 +779,7 @@ ASSUME: I is a zero-dimensional radical ideal
 RETURN: L1, L2, where L1 contains boxes smaller than eps which may contain an
         element of V(I), i.e. a root and L2 contains boxes which contain
         exactly one element of V(I)
+NOTE: computes boxes B_i which (maybe) contain an element of V(I) using the interval Newton step 
 EXAMPLE: example rootIsolationNoPreprocessing; exclusion test for intersection of two ellipses"
 {
     //set of boxes smaller than size
@@ -853,7 +870,7 @@ example
     result;
 }
 
-proc noRootsOnBoundary(ideal I, box B)
+static proc noRootsOnBoundary(ideal I, box B)
 "USAGE:  noZeroesOnBoundary(I, B), I ideal, B box
 RETURN: intvec iv where:
         iv[i] == 1 if there is no root of I on the boundary of B[i], 0 else
