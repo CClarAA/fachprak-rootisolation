@@ -1,7 +1,7 @@
 timer = 1;
 system("--ticks-per-sec", 1000);
 int t = timer;
-LIB "interval.lib";
+LIB "rootIsolation.lib";
 
 ring R = 0,(x,y),lp;
 ideal I = 2x2-xy+2y2-2,2x2-3xy+3y2-2;

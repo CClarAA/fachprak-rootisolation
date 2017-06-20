@@ -17,7 +17,7 @@ for (int i = 1; i <= size(ff); i++)
 ring S = 0,(a,b,c,d,t),lp;
 ideal J = fetch(tmp, I, intvec(0,0,0,0,5), 1..4);
 
-LIB "interval.lib";
+LIB "rootIsolation.lib";
 
 interval I = bounds(-100,100);
 box B = list(I,I,I,I, bounds(0,2));

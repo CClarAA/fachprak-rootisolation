@@ -1232,9 +1232,9 @@ extern "C" int mod_init(SModulFunctions* psModulFunctions)
     boxID = setBlackboxStuff(b_bx, "box");
 
     // add additional functions
-    psModulFunctions->iiAddCproc("interval.lib", "length", FALSE, length);
-    psModulFunctions->iiAddCproc("interval.lib", "boxSet", FALSE, boxSet);
-    psModulFunctions->iiAddCproc("interval.lib", "evalPolyAtBox", FALSE,
+    psModulFunctions->iiAddCproc("interval.so", "length", FALSE, length);
+    psModulFunctions->iiAddCproc("interval.so", "boxSet", FALSE, boxSet);
+    psModulFunctions->iiAddCproc("interval.so", "evalPolyAtBox", FALSE,
         evalPolyAtBox);
 
     // TODO add help strings
