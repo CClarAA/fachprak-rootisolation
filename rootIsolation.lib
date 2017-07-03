@@ -915,6 +915,8 @@ EXAMPLE: example rootIsolation; for intersection of two ellipses"
         gbUnivarPolys[i] = gbTemp[1];
     }
 
+	gbUnivarPolys;
+	
     // do computations in univariate ring
     ring rUnivar = ring(rList);
     setring rUnivar;
@@ -996,6 +998,191 @@ example
     box B = list(i, i);
 
     list result = rootIsolation(I, B, 1/512);
+    size(result[1]);
+    size(result[2]);
+
+    result;
+}
+
+proc rootIsolationFGLM(ideal I, box start, number eps)
+"USAGE:  rootIsolation(I, start, eps); I ideal, start box, eps number
+ASSUME: I is a zero-dimensional radical ideal;
+RETURN: L1, L2, where L1 contains boxes smaller than eps which may contain an
+        element of V(I), i.e. a root and L2 contains boxes which contain
+        exactly one element of V(I)
+PURPOSE: same as rootIsolationNoPreprocessing, but speeds up computation by
+        preprocessing starting box
+THEORY: As every root of I is a root of the polynomials I[i], we use Groebner
+        elimination to find univariate polynomials for every variable which
+        have these roots as well. Applying root isolation to these univariate
+        polynomials then provides smaller starting boxes which speed up
+        computations in the multivariate case.
+EXAMPLE: example rootIsolationFGLM; for intersection of two ellipses"
+{
+    int N = nvars(basering);
+    int i, j, k, l;
+
+    intvec noZeroes;
+    // check if there are roots on the boundary of start
+    while(1)
+    {
+        noZeroes = noRootsOnBoundary(I, start);
+        // stop if all boundaries root-free
+        if (product(noZeroes)) { break; }
+
+        for (i = 1; i <= N; i++)
+        {
+            for (j = 1; j <= 2; j++)
+            {
+                // change offending boundary
+                if (!noZeroes[2*i+j-2])
+                {
+                    start = boxSet(start, i,
+                        start[i] + (-1)^j * bounds(0, length(start[i])/10));
+                }
+            }
+        }
+    }
+
+    // need at least two variables
+    if (N < 2)
+    {
+        return(rootIsolationNoPreprocessing(I, start, eps));
+    }
+
+    // construct single variable ring from basering
+    ring rSource = basering;
+    list rList = ringlist(rSource);
+    list rList2= ringlist(rSource);
+    // delete all but first variable
+    rList[2] = list(rList[2][1]);
+    // adjust weight vector
+    rList[3][1][2] = intvec(1);
+    
+    //change ordering in rList2 to dp for faster computation
+    rList2[3][1][1] = "dp";
+    ring Rdp=ring(rList2);
+    setring Rdp;
+    intvec perm;
+    option(redSB);
+     
+    // fetch the ideal I from the ring rSource to the ring Rdp
+    rSource;
+    Rdp;
+    
+    ideal Ipermutation;
+    typeof(I);
+    ideal Igr=fetch(rSource, I);   //das funktioniert irgendwie immer nicht so ganz...
+    
+    //change ordering to lp and construct a new ring with ordering lp 
+    setring(rSource);
+    rList2[3][1][1] = "lp";
+    ring Rlp=ring(rList2);
+    
+	setring Rlp;
+	ideal gbUnivarPolys, gbTemp;
+	
+    // permute every variable to the end once and compute Groebner basis to
+    // find univariate polynomial in that variable, for this use fglm
+    for (i = 1; i <= N; i++)
+    {
+    	setring Rdp;
+        perm = 1..N;
+        perm[i] = N;
+        perm[N] = i;
+
+        Ipermutation = fetch(Rdp, Igr, perm);
+        Ipermutation = std(Ipermutation);
+        
+        setring Rlp;
+        gbTemp = fglm(Rdp,Ipermutation);
+
+        // first poly in GB now only depends on last variable
+        gbUnivarPolys[i] = gbTemp[1];
+    }
+	gbUnivarPolys;
+    // do computations in univariate ring
+    setring rSource;
+    ring rUnivar = ring(rList);
+    setring rUnivar;
+
+    // gbUnivarPoly only contains var(N),
+    // make sure variables are properly mapped
+    ideal gbUnivarPolys = fetch(Rlp, gbUnivarPolys, intvec(0:(N-1),1));
+    number eps = fetch(rSource, eps);
+    list univarResult, startBoxesPerDim;
+
+    for (i = 1; i <= N; i++)
+    {
+        univarResult = rootIsolationNoPreprocessing(ideal(gbUnivarPolys[i]),
+            box(list(start[i])), eps);
+        // maybe result[1] is not empty, so take both
+        startBoxesPerDim[i] = univarResult[1] + univarResult[2];
+        // debug:
+        print(string("Sieved variable ", varstr(rSource, i), " to ",
+            size(startBoxesPerDim[i]), " intervals."));
+    }
+
+    intvec sizes, repCount = 0:N, 1:N;
+    int numBoxes = 1;
+
+    for (i = 1; i <= N; i++)
+    {
+        sizes[i] = size(startBoxesPerDim[i]);
+        numBoxes = numBoxes * sizes[i];
+    }
+
+    for (i = N-1; i >= 1; i--)
+    {
+        repCount[i] = repCount[i+1] * sizes[i+1];
+    }
+
+    list startBoxes, sbTemp;
+
+    for (i = 1; i <= numBoxes; i++)
+    {
+        sbTemp[i] = list();
+    }
+
+    // computes "cartesian product" of found boxes to lift to N variables
+    for (i = 1; i <= N; i++)
+    {
+        // full loop of elements
+        for (j = 0; j < numBoxes; j = j + sizes[i]*repCount[i])
+        {
+            // boxes
+            for (k = 0; k < sizes[i]; k++)
+            {
+                // repetions
+                for (l = 1; l <= repCount[i]; l++)
+                {
+                    // last index since we need interval in one-dimensional box
+                    sbTemp[j+k*repCount[i]+l][i] = startBoxesPerDim[i][k+1][1];
+                }
+            }
+        }
+    }
+
+    // switch back for final computation and so that boxes have proper size
+    setring rSource;
+    for (i = 1; i <= size(sbTemp); i++)
+    {
+        startBoxes[i] = box(sbTemp[i]);
+    }
+
+    return(rootIsolationNoPreprocessing(I, startBoxes, eps));
+}
+example
+{
+    "EXAMPLE:"; echo = 2;
+
+    ring R = 0,(x,y),dp;
+    ideal I = 2x2-xy+2y2-2,2x2-3xy+3y2-2;  // V(I) has four elements
+
+    interval i = bounds(-3/2,3/2);
+    box B = list(i, i);
+
+    list result = rootIsolationFGLM(I, B, 1/512);
     size(result[1]);
     size(result[2]);
 
