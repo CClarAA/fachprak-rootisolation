@@ -914,8 +914,6 @@ EXAMPLE: example rootIsolation; for intersection of two ellipses"
         // first poly in GB now only depends on last variable
         gbUnivarPolys[i] = gbTemp[1];
     }
-
-	gbUnivarPolys;
 	
     // do computations in univariate ring
     ring rUnivar = ring(rList);
@@ -1073,34 +1071,47 @@ EXAMPLE: example rootIsolationFGLM; for intersection of two ellipses"
     ideal Ipermutation;
     typeof(I);
     ideal Igr=fetch(rSource, I);   //das funktioniert irgendwie immer nicht so ganz...
+    Igr=std(Igr);
     
     //change ordering to lp and construct a new ring with ordering lp 
     setring(rSource);
     rList2[3][1][1] = "lp";
+    
+    ring Rhelp=ring(rList2);
+    setring(Rhelp);
+    ideal gbUnivarPolys;
+    
+    setring(rSource);
+    //ring in dem elimination stattfindet
     ring Rlp=ring(rList2);
     
-	setring Rlp;
-	ideal gbUnivarPolys, gbTemp;
 	
-    // permute every variable to the end once and compute Groebner basis to
+    // permute every variable to the end once 
     // find univariate polynomial in that variable, for this use fglm
+    setring(Rhelp);
+    string variab;
+    list RingListElim=ringlist(Rhelp);
+    
     for (i = 1; i <= N; i++)
     {
-    	setring Rdp;
-        perm = 1..N;
-        perm[i] = N;
-        perm[N] = i;
-
-        Ipermutation = fetch(Rdp, Igr, perm);
-        Ipermutation = std(Ipermutation);
-        
-        setring Rlp;
-        gbTemp = fglm(Rdp,Ipermutation);
-
-        // first poly in GB now only depends on last variable
-        gbUnivarPolys[i] = gbTemp[1];
+    	variab =RingListElim[2][i];
+    	RingListElim[2][i]=RingListElim[2][N];
+    	RingListElim[2][N]=variab;
+    	Rlp=ring(RingListElim);
+    	setring Rlp;
+    	ideal gbTemp;
+    	gbTemp = fglm(Rdp,Igr);
+    	gbTemp;
+    	
+    	setring Rhelp;
+    	RingListElim[2][N]=RingListElim[2][i];
+    	RingListElim[2][i]=variab;
+    	// first poly in GB now only depends on last variable
+    	ideal Help=fetch(Rlp,gbTemp);
+    	gbUnivarPolys[i]=Help[1];
     }
-	gbUnivarPolys;
+    
+	//gbUnivarPolys;
     // do computations in univariate ring
     setring rSource;
     ring rUnivar = ring(rList);
@@ -1108,7 +1119,7 @@ EXAMPLE: example rootIsolationFGLM; for intersection of two ellipses"
 
     // gbUnivarPoly only contains var(N),
     // make sure variables are properly mapped
-    ideal gbUnivarPolys = fetch(Rlp, gbUnivarPolys, intvec(0:(N-1),1));
+    ideal gbUnivarPolys = fetch(Rhelp, gbUnivarPolys, intvec(0:(N-1),1));
     number eps = fetch(rSource, eps);
     list univarResult, startBoxesPerDim;
 
